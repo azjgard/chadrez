@@ -44,8 +44,12 @@ function usePieceBaseProperties(position: IPosition, player: Color) {
   };
 }
 
+function posOnBoard(p: IPosition) {
+  return p.r >= 0 && p.r <= 7;
+}
+
 function createPotentialMoves(moves: IPosition[]) {
-  return moves.filter((p) => p.r >= 0 && p.r <= 7);
+  return moves.filter(posOnBoard);
 }
 
 // need to assume that white is always on top, black is always on bottom
@@ -133,11 +137,91 @@ function Knight(r: number, c: number, player: "b" | "w"): IPiece {
   };
 }
 
+function stepDiagonalPositions(
+  p: IPosition,
+  rDir: number,
+  cDir: number,
+  isValid: (p: IPosition) => boolean,
+) {
+  const positions: IPosition[] = [];
+  for (let i = 1; i < 8; i++) {
+    const position = { r: p.r + rDir * i, c: p.c + cDir * i };
+    if (!isValid(position)) {
+      break;
+    }
+    positions.push(position);
+  }
+  return positions;
+}
+
+function Bishop(r: number, c: number, player: "b" | "w"): IPiece {
+  const base = usePieceBaseProperties({ r, c }, player);
+
+  const isEnemyPiece = (gameState: IGameState, p: IPosition) =>
+    gameState.board[p.r][p.c] &&
+    gameState.board[p.r][p.c]!.getPlayer() !== base.getPlayer();
+
+  const isFriendlyPiece = (gameState: IGameState, p: IPosition) =>
+    gameState.board[p.r][p.c] &&
+    gameState.board[p.r][p.c]!.getPlayer() === base.getPlayer();
+
+  const createDiagonalPositionsGenerator =
+    (gameState: IGameState, position: IPosition) =>
+    (rowDirection: number, columnDirection: number) => {
+      let hasSeenEnemyPiece = false;
+
+      return stepDiagonalPositions(
+        position,
+        rowDirection,
+        columnDirection,
+        (position) => {
+          if (hasSeenEnemyPiece || !posOnBoard(position)) {
+            return false;
+          }
+
+          if (isEnemyPiece(gameState, position)) {
+            hasSeenEnemyPiece = true;
+            return true;
+          }
+
+          return !isFriendlyPiece(gameState, position);
+        },
+      );
+    };
+
+  return {
+    ...base,
+    name: "BISHOP",
+    getValidMovePositions(gameState) {
+      const position = base.getPosition();
+
+      const generateDiagonalPositions = createDiagonalPositionsGenerator(
+        gameState,
+        position,
+      );
+
+      const possibleMoves = createPotentialMoves([
+        ...generateDiagonalPositions(-1, 1),
+        ...generateDiagonalPositions(1, 1),
+        ...generateDiagonalPositions(1, -1),
+        ...generateDiagonalPositions(-1, -1),
+      ]);
+
+      return new Set(possibleMoves.map(posToKey));
+    },
+    Component: (props) => (
+      <PieceComponent {...props} color={base.getPlayer()} name="bishop" />
+    ),
+  };
+}
+
 const SYMBOL_TO_PIECE = {
   P: [Pawn, "w"],
   p: [Pawn, "b"],
   K: [Knight, "w"],
   k: [Knight, "b"],
+  B: [Bishop, "w"],
+  b: [Bishop, "b"],
 } as const;
 
 function isValidSymbol(symbol: string): symbol is keyof typeof SYMBOL_TO_PIECE {
@@ -145,14 +229,14 @@ function isValidSymbol(symbol: string): symbol is keyof typeof SYMBOL_TO_PIECE {
 }
 
 const DEFAULT_BOARD = [
-  ["P", "K", "P", "P", "P", "P", "K", "P"],
+  ["P", "K", "B", "P", "P", "B", "K", "P"],
   ["P", "P", "P", "P", "P", "P", "P", "P"],
   [" ", " ", " ", " ", " ", " ", " ", " "],
   [" ", " ", " ", " ", " ", " ", " ", " "],
   [" ", " ", " ", " ", " ", " ", " ", " "],
   [" ", " ", " ", " ", " ", " ", " ", " "],
   ["p", "p", "p", "p", "p", "p", "p", "p"],
-  ["p", "k", "p", "p", "p", "p", "k", "p"],
+  ["p", "k", "b", "p", "p", "b", "k", "p"],
 ];
 
 function initializeBoard(boardSymbols: string[][]) {
