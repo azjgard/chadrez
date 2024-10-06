@@ -109,25 +109,57 @@ function Pawn(r: number, c: number, player: "b" | "w"): IPiece {
 }
 const P = Pawn;
 
-const defaultBoard: IGameState["board"] =
-  // prettier-ignore
-  [
-    [P(0, 0, "w"), P(0, 1, "w"), P(0, 2, "w"), P(0, 3, "w"), P(0, 4, "w"), P(0, 5, "w"), P(0, 6, "w"), P(0, 7, "w")],
-    [P(1, 0, "w"), P(1, 1, "w"), P(1, 2, "w"), P(1, 3, "w"), P(1, 4, "w"), P(1, 5, "w"), P(1, 6, "w"), P(1, 7, "w")],
-    [null, null, null, null, null, null, null, null],
-    [null, null, null, null, null, null, null, null],
-    [null, null, null, null, null, null, null, null],
-    [null, null, null, null, null, null, null, null],
-    [P(6, 0, "b"), P(6, 1, "b"), P(6, 2, "b"), P(6, 3, "b"), P(6, 4, "b"), P(6, 5, "b"), P(6, 6, "b"), P(6, 7, "b")],
-    [P(7, 0, "b"), P(7, 1, "b"), P(7, 2, "b"), P(7, 3, "b"), P(7, 4, "b"), P(7, 5, "b"), P(7, 6, "b"), P(7, 7, "b")],
-  ];
+const SYMBOL_TO_PIECE = {
+  P: [P, "w"],
+  p: [P, "b"],
+} as const;
+
+function isValidSymbol(symbol: string): symbol is keyof typeof SYMBOL_TO_PIECE {
+  return symbol in SYMBOL_TO_PIECE;
+}
+
+const DEFAULT_BOARD = [
+  ["P", "P", "P", "P", "P", "P", "P", "P"],
+  ["P", "P", "P", "P", "P", "P", "P", "P"],
+  [" ", " ", " ", " ", " ", " ", " ", " "],
+  [" ", " ", " ", " ", " ", " ", " ", " "],
+  [" ", " ", " ", " ", " ", " ", " ", " "],
+  [" ", " ", " ", " ", " ", " ", " ", " "],
+  ["p", "p", "p", "p", "p", "p", "p", "p"],
+  ["p", "p", "p", "p", "p", "p", "p", "p"],
+];
+
+function initializeBoard(boardSymbols: string[][]) {
+  const board: IGameState["board"] = [];
+  for (let r = 0; r < 8; r++) {
+    const row: IGameState["board"][number] = [];
+    for (let c = 0; c < 8; c++) {
+      const symbol = boardSymbols[r][c];
+      if (!isValidSymbol(symbol)) {
+        row.push(null);
+        continue;
+      }
+
+      const pieceData = SYMBOL_TO_PIECE[symbol];
+      if (!pieceData) {
+        row.push(null);
+        continue;
+      }
+
+      const [PieceFunction, player] = pieceData;
+      row.push(PieceFunction(r, c, player));
+    }
+    board.push(row);
+  }
+  return board;
+}
 
 function getInitialGameState() {
   let gameState: IGameState = {
     player: "w",
     selectedSquare: null,
     validMovesFromPosition: new Map(),
-    board: defaultBoard,
+    board: initializeBoard(DEFAULT_BOARD),
     capturedPieces: { w: [], b: [] },
   };
 
