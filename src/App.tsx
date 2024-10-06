@@ -6,33 +6,45 @@ import { Color, Piece, defaultPieceImageMap } from "./lib";
 
 function posToKey(pos: IPosition | number, c?: number) {
   if (typeof pos === "number" && typeof c === "number") {
-    return "__" + pos + "__" + c + "__";
+    return +pos + "__" + c;
   }
 
   if (typeof pos === "object") {
-    return "__" + pos.r + "__" + pos.c + "__";
+    return +pos.r + "__" + pos.c;
   }
 
   throw new Error("Invalid posToKey");
+}
+
+function keyToPos(pos: string) {
+  const [rStr, cStr] = pos.split("__");
+
+  const r = parseInt(rStr);
+  if (isNaN(r)) throw new Error("Invalid pos key parsing r: " + pos);
+
+  const c = parseInt(cStr);
+  if (isNaN(c)) throw new Error("Invalid pos key parsing c: " + pos);
+
+  return { r, c };
 }
 
 function usePieceBaseProperties(position: IPosition, player: Color) {
   let _position = { ...position };
   let _player = player;
 
-  function getPlayer(): ReturnType<IPiece["getPlayer"]> {
+  function getPlayer() {
     return _player;
   }
 
-  function setPlayer(p: Color): ReturnType<IPiece["setPlayer"]> {
+  function setPlayer(p: Color) {
     _player = p;
   }
 
-  function getPosition(): ReturnType<IPiece["getPosition"]> {
+  function getPosition() {
     return _position;
   }
 
-  function setPosition(p: IPosition): ReturnType<IPiece["setPosition"]> {
+  function setPosition(p: IPosition) {
     _position = p;
   }
 
@@ -45,6 +57,22 @@ function usePieceBaseProperties(position: IPosition, player: Color) {
 }
 
 function createPieceHelpers(gameState: IGameState, player: Color) {
+  const isTargetableByEnemyPiece = (p: IPosition) => {
+    // for each set of enemy valid moves in the move state
+    // is targetable if set includes position
+    for (const [fromPosKey, positionSet] of Array.from(
+      gameState.validMovesFromPosition.entries(),
+    )) {
+      const fromPos = keyToPos(fromPosKey);
+      const piece = gameState.board[fromPos.r][fromPos.c];
+      // only check enemy players
+      if (!(piece && piece.getPlayer() !== player)) continue;
+      if (positionSet.has(posToKey(p))) return true;
+    }
+
+    return false;
+  };
+
   const isPiece = (p: IPosition) => !!gameState.board[p.r][p.c];
 
   const isEnemyPiece = (p: IPosition) =>
@@ -84,6 +112,7 @@ function createPieceHelpers(gameState: IGameState, player: Color) {
     isPiece,
     isEnemyPiece,
     isFriendlyPiece,
+    isTargetableByEnemyPiece,
     createPositionsGenerator,
   };
 }
@@ -280,7 +309,10 @@ function King(r: number, c: number, player: "b" | "w"): IPiece {
         { r: position.r + 1, c: position.c - 1 },
         { r: position.r, c: position.c - 1 },
         { r: position.r - 1, c: position.c - 1 },
-      ]).filter((p) => !helpers.isFriendlyPiece(p));
+      ]).filter(
+        (p) =>
+          !(helpers.isFriendlyPiece(p) || helpers.isTargetableByEnemyPiece(p)),
+      );
 
       return new Set(possibleMoves.map(posToKey));
     },
@@ -329,11 +361,11 @@ function isValidSymbol(symbol: string): symbol is keyof typeof SYMBOL_TO_PIECE {
 }
 
 const DEFAULT_BOARD: (keyof typeof SYMBOL_TO_PIECE)[][] = [
-  ["R", "N", "B", "K", "Q", "B", "N", "R"],
+  ["R", "N", "B", " ", "Q", "B", "N", "R"],
   ["P", "P", "P", "P", "P", "P", "P", "P"],
   [" ", " ", " ", " ", " ", " ", " ", " "],
   [" ", " ", " ", " ", " ", " ", " ", " "],
-  [" ", " ", " ", " ", " ", " ", " ", " "],
+  [" ", " ", " ", "K", " ", " ", " ", " "],
   [" ", " ", " ", " ", " ", " ", " ", " "],
   ["p", "p", "p", "p", "p", "p", "p", "p"],
   ["r", "n", "b", "k", "q", "b", "n", "r"],
@@ -494,6 +526,9 @@ function applyMoveTurnToGameState(
     // - converting a pawn
 
     // TODO: compute whether or not king is now in check or checkmate
+    //
+
+    // TODO: each piece needs to filter moves by whether or not a given move puts their own king in check
   }
 
   const newGameState: IGameState = {
@@ -504,17 +539,36 @@ function applyMoveTurnToGameState(
     capturedPieces: newCapturedPieces,
   };
 
-  newGameState.board.forEach((row) => {
-    row.forEach((piece) => {
-      // check valid moves for only squares occupied by the new player's pieces
-      if (!(piece && piece.getPlayer() === newPlayer)) return;
+  // specific edge case: moves for the king of the new player need to be calculated after ALL other
+  // valid moves for all pieces have been calcualted
+  let newPlayerKing: IPiece | null = null;
+
+  for (const row of newGameState.board) {
+    for (const piece of row) {
+      if (!piece) continue;
+
+      if (piece.name === "KING" && piece.getPlayer() === newPlayer) {
+        newPlayerKing = piece;
+        continue;
+      }
 
       newGameState.validMovesFromPosition.set(
         posToKey(piece.getPosition()),
         piece.getValidMovePositions(newGameState),
       );
-    });
-  });
+    }
+  }
+
+  if (!newPlayerKing) {
+    throw new Error(
+      "Processed new game board state without detecting a friendly king",
+    );
+  }
+
+  newGameState.validMovesFromPosition.set(
+    posToKey(newPlayerKing.getPosition()),
+    newPlayerKing.getValidMovePositions(newGameState),
+  );
 
   return newGameState;
 }
