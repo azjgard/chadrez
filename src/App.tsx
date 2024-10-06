@@ -16,11 +16,8 @@ function posToKey(pos: IPosition | number, c?: number) {
   throw new Error("Invalid posToKey");
 }
 
-// need to assume that white is always on top, black is always on bottom
-// can rotate the view if needed but this simplifies the move logic significantly
-
-function Pawn(r: number, c: number, player: "b" | "w"): IPiece {
-  let _position = { r: r, c: c };
+function usePieceBaseProperties(position: IPosition, player: Color) {
+  let _position = { ...position };
   let _player = player;
 
   function getPlayer(): ReturnType<IPiece["getPlayer"]> {
@@ -40,30 +37,37 @@ function Pawn(r: number, c: number, player: "b" | "w"): IPiece {
   }
 
   return {
-    name: "PAWN",
-    player: player,
     getPlayer,
     setPlayer,
     getPosition,
     setPosition,
+  };
+}
+
+function createPotentialMoves(moves: IPosition[]) {
+  return moves.filter((p) => p.r >= 0 && p.r <= 7);
+}
+
+// need to assume that white is always on top, black is always on bottom
+// can rotate the view if needed but this simplifies the move logic significantly
+
+function Pawn(r: number, c: number, player: "b" | "w"): IPiece {
+  const base = usePieceBaseProperties({ r, c }, player);
+
+  return {
+    ...base,
+    name: "PAWN",
     getValidMovePositions(gameState) {
-      const dir = _player === "w" ? 1 : -1;
-      const startingRow = _player === "w" ? 1 : gameState.board.length - 2;
+      const dir = base.getPlayer() === "w" ? 1 : -1;
+      const startingRow =
+        base.getPlayer() === "w" ? 1 : gameState.board.length - 2;
 
-      const position = getPosition();
+      const position = base.getPosition();
 
-      const possibleForwardMoves = [
+      const forward = createPotentialMoves([
         { r: position.r + dir, c: position.c },
         { r: position.r + dir * 2, c: position.c },
-      ].filter((possibleMovePosition, i) => {
-        // can't move off the board
-        if (
-          possibleMovePosition.r < 0 ||
-          possibleMovePosition.r > gameState.board.length - 1
-        ) {
-          return false;
-        }
-
+      ]).filter((possibleMovePosition, i) => {
         // cant move into a square where there is already a piece
         const pieceAlreadyOnSquare =
           gameState.board[possibleMovePosition.r][possibleMovePosition.c];
@@ -79,39 +83,61 @@ function Pawn(r: number, c: number, player: "b" | "w"): IPiece {
         return true;
       });
 
-      const possibleDiagonalMoves = [
+      const diagonal = createPotentialMoves([
         { r: position.r + dir, c: position.c + 1 },
         { r: position.r + dir, c: position.c - 1 },
-      ].filter((possibleMovePosition) => {
-        // can't move off the board
-        if (
-          possibleMovePosition.r < 0 ||
-          possibleMovePosition.r > gameState.board.length - 1
-        ) {
-          return false;
-        }
-
-        const pieceOnSquare =
-          gameState.board[possibleMovePosition.r][possibleMovePosition.c];
+      ]).filter((p) => {
+        const pieceOnSquare = gameState.board[p.r][p.c];
 
         // can only move diagonal if there's an enemy piece in the diagonal square
-        return pieceOnSquare && pieceOnSquare.player !== _player;
+        return pieceOnSquare && pieceOnSquare.getPlayer() !== base.getPlayer();
       });
 
-      return new Set(
-        [...possibleForwardMoves, ...possibleDiagonalMoves].map(posToKey),
-      );
+      return new Set([...forward, ...diagonal].map(posToKey));
     },
     Component: (props) => (
-      <PieceComponent {...props} color={_player} name="pawn" />
+      <PieceComponent {...props} color={base.getPlayer()} name="pawn" />
     ),
   };
 }
-const P = Pawn;
+
+function Knight(r: number, c: number, player: "b" | "w"): IPiece {
+  const base = usePieceBaseProperties({ r, c }, player);
+
+  return {
+    ...base,
+    name: "KNIGHT",
+    getValidMovePositions(gameState) {
+      const position = base.getPosition();
+      const possibleMoves = createPotentialMoves([
+        { r: position.r - 2, c: position.c + 1 },
+        { r: position.r - 1, c: position.c + 2 },
+        { r: position.r + 1, c: position.c + 2 },
+        { r: position.r + 2, c: position.c + 1 },
+        { r: position.r + 2, c: position.c - 1 },
+        { r: position.r + 1, c: position.c - 2 },
+        { r: position.r - 1, c: position.c - 2 },
+        { r: position.r - 2, c: position.c - 1 },
+      ]).filter(
+        (p) =>
+          !(
+            gameState.board[p.r][p.c] &&
+            gameState.board[p.r][p.c]!.getPlayer() === base.getPlayer()
+          ),
+      );
+      return new Set(possibleMoves.map(posToKey));
+    },
+    Component: (props) => (
+      <PieceComponent {...props} color={base.getPlayer()} name="knight" />
+    ),
+  };
+}
 
 const SYMBOL_TO_PIECE = {
-  P: [P, "w"],
-  p: [P, "b"],
+  P: [Pawn, "w"],
+  p: [Pawn, "b"],
+  K: [Knight, "w"],
+  k: [Knight, "b"],
 } as const;
 
 function isValidSymbol(symbol: string): symbol is keyof typeof SYMBOL_TO_PIECE {
@@ -119,14 +145,14 @@ function isValidSymbol(symbol: string): symbol is keyof typeof SYMBOL_TO_PIECE {
 }
 
 const DEFAULT_BOARD = [
-  ["P", "P", "P", "P", "P", "P", "P", "P"],
+  ["P", "K", "P", "P", "P", "P", "K", "P"],
   ["P", "P", "P", "P", "P", "P", "P", "P"],
   [" ", " ", " ", " ", " ", " ", " ", " "],
   [" ", " ", " ", " ", " ", " ", " ", " "],
   [" ", " ", " ", " ", " ", " ", " ", " "],
   [" ", " ", " ", " ", " ", " ", " ", " "],
   ["p", "p", "p", "p", "p", "p", "p", "p"],
-  ["p", "p", "p", "p", "p", "p", "p", "p"],
+  ["p", "k", "p", "p", "p", "p", "k", "p"],
 ];
 
 function initializeBoard(boardSymbols: string[][]) {
@@ -195,7 +221,7 @@ function App() {
     squarePiece: IPieceOnBoard,
   ) => {
     const isSelectingOwnPiece =
-      squarePiece && squarePiece.player === gameState.player;
+      squarePiece && squarePiece.getPlayer() === gameState.player;
 
     if (isSelectingOwnPiece) {
       setGameState((s) => ({
@@ -297,7 +323,7 @@ function applyMoveTurnToGameState(
   newGameState.board.forEach((row) => {
     row.forEach((piece) => {
       // check valid moves for only squares occupied by the new player's pieces
-      if (!(piece && piece.player === newPlayer)) return;
+      if (!(piece && piece.getPlayer() === newPlayer)) return;
 
       newGameState.validMovesFromPosition.set(
         posToKey(piece.getPosition()),
@@ -349,7 +375,6 @@ interface IPosition {
 
 interface IPieceBase {
   readonly name: string;
-  readonly player: Color;
 }
 
 interface IPieceMethods {
