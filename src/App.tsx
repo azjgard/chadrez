@@ -179,13 +179,13 @@ function App() {
     }
 
     const newGameState = applyMoveTurnToGameState(gameState, squarePosition);
-    console.log(newGameState.board[3]);
     setGameState(newGameState);
   };
 
   return (
     <div>
       {turnText}
+      <CapturedPieces gameState={gameState} player="b" />
       {gameState.board.map((row, r) => {
         const rowData = row.map((Piece, c) => {
           const squareClassName = (r + c) % 2 === 0 ? "light" : "dark";
@@ -211,6 +211,7 @@ function App() {
 
         return <Row key={`r${r}`}>{rowData}</Row>;
       })}
+      <CapturedPieces gameState={gameState} player="w" />
     </div>
   );
 }
@@ -356,6 +357,24 @@ function MoveTargetIndicator() {
   return (
     <div className="MoveTarget">
       <div />
+    </div>
+  );
+}
+
+function CapturedPieces(props: { gameState: IGameState; player: Color }) {
+  return (
+    <div className="CapturedPiecesContainer">
+      {props.gameState.capturedPieces[props.player].map((piece, i) => (
+        <CapturedPiece key={i} component={piece.Component} />
+      ))}
+    </div>
+  );
+}
+
+function CapturedPiece(props: { component: IPieceMethods["Component"] }) {
+  return (
+    <div className="CapturedPiece">
+      <props.component isSelected={false} />
     </div>
   );
 }

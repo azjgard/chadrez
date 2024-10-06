@@ -49,11 +49,23 @@
   display: flex;
   justify-content: center;
   align-items: center;
+}
+.MoveTarget > div {
+  border-radius: 100%;
+  width: 50%;
+  height: 50%;
+  background-color: gray;
+}
 
-  & > div {
-    border-radius: 100%;
-    width: 50%;
-    height: 50%;
-    background-color: gray;
-  }
+.CapturedPiecesContainer {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  min-height: 45px;
+}
+.CapturedPiece {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 45px;
 }
