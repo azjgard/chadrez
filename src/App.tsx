@@ -44,6 +44,50 @@ function usePieceBaseProperties(position: IPosition, player: Color) {
   };
 }
 
+function createPieceHelpers(gameState: IGameState, player: Color) {
+  const isPiece = (p: IPosition) => !!gameState.board[p.r][p.c];
+
+  const isEnemyPiece = (p: IPosition) =>
+    gameState.board[p.r][p.c] &&
+    gameState.board[p.r][p.c]!.getPlayer() !== player;
+
+  const isFriendlyPiece = (p: IPosition) =>
+    gameState.board[p.r][p.c] &&
+    gameState.board[p.r][p.c]!.getPlayer() === player;
+
+  const createPositionsGenerator =
+    (position: IPosition, steps: number) =>
+    (rowDirection: number, columnDirection: number) => {
+      let hasSeenEnemyPiece = false;
+
+      return stepPositions(
+        position,
+        rowDirection,
+        columnDirection,
+        steps,
+        (position) => {
+          if (hasSeenEnemyPiece || !posOnBoard(position)) {
+            return false;
+          }
+
+          if (isEnemyPiece(position)) {
+            hasSeenEnemyPiece = true;
+            return true;
+          }
+
+          return !isFriendlyPiece(position);
+        },
+      );
+    };
+
+  return {
+    isPiece,
+    isEnemyPiece,
+    isFriendlyPiece,
+    createPositionsGenerator,
+  };
+}
+
 function posOnBoard(p: IPosition) {
   return p.r >= 0 && p.r <= 7;
 }
@@ -62,25 +106,24 @@ function Pawn(r: number, c: number, player: "b" | "w"): IPiece {
     ...base,
     name: "PAWN",
     getValidMovePositions(gameState) {
-      const dir = base.getPlayer() === "w" ? 1 : -1;
-      const startingRow =
+      const position = base.getPosition();
+      const helpers = createPieceHelpers(gameState, player);
+      const generatePositions = helpers.createPositionsGenerator(position, 2);
+
+      const pawnDirection = base.getPlayer() === "w" ? 1 : -1;
+      const pawnStartingRow =
         base.getPlayer() === "w" ? 1 : gameState.board.length - 2;
 
-      const position = base.getPosition();
+      const forward = createPotentialMoves(
+        // pawn-specific behavior:
+        // locked move direction according to color
+        generatePositions(pawnDirection, 0),
+      ).filter((p, i) => {
+        if (helpers.isPiece(p)) return false;
 
-      const forward = createPotentialMoves([
-        { r: position.r + dir, c: position.c },
-        { r: position.r + dir * 2, c: position.c },
-      ]).filter((possibleMovePosition, i) => {
-        // cant move into a square where there is already a piece
-        const pieceAlreadyOnSquare =
-          gameState.board[possibleMovePosition.r][possibleMovePosition.c];
-        if (pieceAlreadyOnSquare) {
-          return false;
-        }
-
+        // pawn-specific behavior:
         // can't move 2 squares unless pawn is on starting row
-        if (i === 1 && position.r !== startingRow) {
+        if (i === 1 && position.r !== pawnStartingRow) {
           return false;
         }
 
@@ -88,8 +131,8 @@ function Pawn(r: number, c: number, player: "b" | "w"): IPiece {
       });
 
       const diagonal = createPotentialMoves([
-        { r: position.r + dir, c: position.c + 1 },
-        { r: position.r + dir, c: position.c - 1 },
+        { r: position.r + pawnDirection, c: position.c + 1 },
+        { r: position.r + pawnDirection, c: position.c - 1 },
       ]).filter((p) => {
         const pieceOnSquare = gameState.board[p.r][p.c];
 
@@ -113,6 +156,7 @@ function Knight(r: number, c: number, player: "b" | "w"): IPiece {
     name: "KNIGHT",
     getValidMovePositions(gameState) {
       const position = base.getPosition();
+      const helpers = createPieceHelpers(gameState, player);
       const possibleMoves = createPotentialMoves([
         { r: position.r - 2, c: position.c + 1 },
         { r: position.r - 1, c: position.c + 2 },
@@ -122,13 +166,7 @@ function Knight(r: number, c: number, player: "b" | "w"): IPiece {
         { r: position.r + 1, c: position.c - 2 },
         { r: position.r - 1, c: position.c - 2 },
         { r: position.r - 2, c: position.c - 1 },
-      ]).filter(
-        (p) =>
-          !(
-            gameState.board[p.r][p.c] &&
-            gameState.board[p.r][p.c]!.getPlayer() === base.getPlayer()
-          ),
-      );
+      ]).filter((p) => !helpers.isFriendlyPiece(p));
       return new Set(possibleMoves.map(posToKey));
     },
     Component: (props) => (
@@ -140,46 +178,14 @@ function Knight(r: number, c: number, player: "b" | "w"): IPiece {
 function Bishop(r: number, c: number, player: "b" | "w"): IPiece {
   const base = usePieceBaseProperties({ r, c }, player);
 
-  const isEnemyPiece = (gameState: IGameState, p: IPosition) =>
-    gameState.board[p.r][p.c] &&
-    gameState.board[p.r][p.c]!.getPlayer() !== base.getPlayer();
-
-  const isFriendlyPiece = (gameState: IGameState, p: IPosition) =>
-    gameState.board[p.r][p.c] &&
-    gameState.board[p.r][p.c]!.getPlayer() === base.getPlayer();
-
-  const createPositionsGenerator =
-    (gameState: IGameState, position: IPosition) =>
-    (rowDirection: number, columnDirection: number) => {
-      let hasSeenEnemyPiece = false;
-
-      return stepPositions(
-        position,
-        rowDirection,
-        columnDirection,
-        (position) => {
-          if (hasSeenEnemyPiece || !posOnBoard(position)) {
-            return false;
-          }
-
-          if (isEnemyPiece(gameState, position)) {
-            hasSeenEnemyPiece = true;
-            return true;
-          }
-
-          return !isFriendlyPiece(gameState, position);
-        },
-      );
-    };
-
   return {
     ...base,
     name: "BISHOP",
     getValidMovePositions(gameState) {
       const position = base.getPosition();
+      const helpers = createPieceHelpers(gameState, player);
 
-      const generatePositions = createPositionsGenerator(gameState, position);
-
+      const generatePositions = helpers.createPositionsGenerator(position, 8);
       const possibleMoves = createPotentialMoves([
         ...generatePositions(-1, 1),
         ...generatePositions(1, 1),
@@ -198,45 +204,14 @@ function Bishop(r: number, c: number, player: "b" | "w"): IPiece {
 function Rook(r: number, c: number, player: "b" | "w"): IPiece {
   const base = usePieceBaseProperties({ r, c }, player);
 
-  const isEnemyPiece = (gameState: IGameState, p: IPosition) =>
-    gameState.board[p.r][p.c] &&
-    gameState.board[p.r][p.c]!.getPlayer() !== base.getPlayer();
-
-  const isFriendlyPiece = (gameState: IGameState, p: IPosition) =>
-    gameState.board[p.r][p.c] &&
-    gameState.board[p.r][p.c]!.getPlayer() === base.getPlayer();
-
-  const createPositionsGenerator =
-    (gameState: IGameState, position: IPosition) =>
-    (rowDirection: number, columnDirection: number) => {
-      let hasSeenEnemyPiece = false;
-
-      return stepPositions(
-        position,
-        rowDirection,
-        columnDirection,
-        (position) => {
-          if (hasSeenEnemyPiece || !posOnBoard(position)) {
-            return false;
-          }
-
-          if (isEnemyPiece(gameState, position)) {
-            hasSeenEnemyPiece = true;
-            return true;
-          }
-
-          return !isFriendlyPiece(gameState, position);
-        },
-      );
-    };
-
   return {
     ...base,
     name: "ROOK",
     getValidMovePositions(gameState) {
       const position = base.getPosition();
+      const helpers = createPieceHelpers(gameState, player);
 
-      const generatePositions = createPositionsGenerator(gameState, position);
+      const generatePositions = helpers.createPositionsGenerator(position, 8);
 
       const possibleMoves = createPotentialMoves([
         ...generatePositions(-1, 0),
@@ -256,46 +231,14 @@ function Rook(r: number, c: number, player: "b" | "w"): IPiece {
 function Queen(r: number, c: number, player: "b" | "w"): IPiece {
   const base = usePieceBaseProperties({ r, c }, player);
 
-  const isEnemyPiece = (gameState: IGameState, p: IPosition) =>
-    gameState.board[p.r][p.c] &&
-    gameState.board[p.r][p.c]!.getPlayer() !== base.getPlayer();
-
-  const isFriendlyPiece = (gameState: IGameState, p: IPosition) =>
-    gameState.board[p.r][p.c] &&
-    gameState.board[p.r][p.c]!.getPlayer() === base.getPlayer();
-
-  const createPositionsGenerator =
-    (gameState: IGameState, position: IPosition) =>
-    (rowDirection: number, columnDirection: number) => {
-      let hasSeenEnemyPiece = false;
-
-      return stepPositions(
-        position,
-        rowDirection,
-        columnDirection,
-        (position) => {
-          if (hasSeenEnemyPiece || !posOnBoard(position)) {
-            return false;
-          }
-
-          if (isEnemyPiece(gameState, position)) {
-            hasSeenEnemyPiece = true;
-            return true;
-          }
-
-          return !isFriendlyPiece(gameState, position);
-        },
-      );
-    };
-
   return {
     ...base,
     name: "ROOK",
     getValidMovePositions(gameState) {
       const position = base.getPosition();
+      const helpers = createPieceHelpers(gameState, player);
 
-      const generatePositions = createPositionsGenerator(gameState, position);
-
+      const generatePositions = helpers.createPositionsGenerator(position, 8);
       const possibleMoves = createPotentialMoves([
         // the moves of a rook
         ...generatePositions(-1, 0),
@@ -320,15 +263,12 @@ function Queen(r: number, c: number, player: "b" | "w"): IPiece {
 function King(r: number, c: number, player: "b" | "w"): IPiece {
   const base = usePieceBaseProperties({ r, c }, player);
 
-  const isFriendlyPiece = (gameState: IGameState, p: IPosition) =>
-    gameState.board[p.r][p.c] &&
-    gameState.board[p.r][p.c]!.getPlayer() === base.getPlayer();
-
   return {
     ...base,
     name: "KING",
     getValidMovePositions(gameState) {
       const position = base.getPosition();
+      const helpers = createPieceHelpers(gameState, player);
       // TODO: disallow the king from moving into check, will require changing valid move
       // computation to always do both sides at once
       const possibleMoves = createPotentialMoves([
@@ -340,7 +280,7 @@ function King(r: number, c: number, player: "b" | "w"): IPiece {
         { r: position.r + 1, c: position.c - 1 },
         { r: position.r, c: position.c - 1 },
         { r: position.r - 1, c: position.c - 1 },
-      ]).filter((p) => !isFriendlyPiece(gameState, p));
+      ]).filter((p) => !helpers.isFriendlyPiece(p));
 
       return new Set(possibleMoves.map(posToKey));
     },
@@ -354,10 +294,11 @@ function stepPositions(
   p: IPosition,
   rDir: number,
   cDir: number,
+  steps: number,
   isValid: (p: IPosition) => boolean,
 ) {
   const positions: IPosition[] = [];
-  for (let i = 1; i < 8; i++) {
+  for (let i = 1; i < 1 + steps; i++) {
     const position = { r: p.r + rDir * i, c: p.c + cDir * i };
     if (!isValid(position)) {
       break;
