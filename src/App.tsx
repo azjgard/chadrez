@@ -1,4 +1,4 @@
-import { useState, Fragment, useMemo } from "react";
+import { useState, useMemo } from "react";
 import classNames from "classnames";
 import "./App.css";
 
@@ -16,25 +16,41 @@ function posToKey(pos: IPosition | number, c?: number) {
   throw new Error("Invalid posToKey");
 }
 
-function keyToPos(posKey: string) {
-  const [r, c] = posKey.split("__");
-  return { r, c };
-}
-
 // need to assume that white is always on top, black is always on bottom
 // can rotate the view if needed but this simplifies the move logic significantly
 
-function Pawn(r: number, c: number, _player: "b" | "w"): IPiece {
-  let position = { r: r, c: c };
-  let player = _player;
+function Pawn(r: number, c: number, player: "b" | "w"): IPiece {
+  let _position = { r: r, c: c };
+  let _player = player;
+
+  function getPlayer(): ReturnType<IPiece["getPlayer"]> {
+    return _player;
+  }
+
+  function setPlayer(p: Color): ReturnType<IPiece["setPlayer"]> {
+    _player = p;
+  }
+
+  function getPosition(): ReturnType<IPiece["getPosition"]> {
+    return _position;
+  }
+
+  function setPosition(p: IPosition): ReturnType<IPiece["setPosition"]> {
+    _position = p;
+  }
 
   return {
     name: "PAWN",
-    player,
-    position,
-    getValidMovePositions(gameState: IGameState) {
-      const dir = player === "w" ? 1 : -1;
-      const startingRow = player === "w" ? 1 : gameState.board.length - 2;
+    player: player,
+    getPlayer,
+    setPlayer,
+    getPosition,
+    setPosition,
+    getValidMovePositions(gameState) {
+      const dir = _player === "w" ? 1 : -1;
+      const startingRow = _player === "w" ? 1 : gameState.board.length - 2;
+
+      const position = getPosition();
 
       const possibleForwardMoves = [
         { r: position.r + dir, c: position.c },
@@ -79,7 +95,7 @@ function Pawn(r: number, c: number, _player: "b" | "w"): IPiece {
           gameState.board[possibleMovePosition.r][possibleMovePosition.c];
 
         // can only move diagonal if there's an enemy piece in the diagonal square
-        return pieceOnSquare && pieceOnSquare.player !== player;
+        return pieceOnSquare && pieceOnSquare.player !== _player;
       });
 
       return new Set(
@@ -87,7 +103,7 @@ function Pawn(r: number, c: number, _player: "b" | "w"): IPiece {
       );
     },
     Component: (props) => (
-      <PieceComponent {...props} color={player} name="pawn" />
+      <PieceComponent {...props} color={_player} name="pawn" />
     ),
   };
 }
@@ -109,12 +125,13 @@ const defaultBoard: IGameState["board"] =
 function getInitialGameState() {
   let gameState: IGameState = {
     player: "w",
-    selectedPiece: null,
+    selectedSquare: null,
     validMovesFromPosition: new Map(),
     board: defaultBoard,
+    capturedPieces: { w: [], b: [] },
   };
 
-  gameState = applyNewTurnToGameState(gameState, "w");
+  gameState = applyMoveTurnToGameState(gameState, null);
 
   return gameState;
 }
@@ -124,10 +141,10 @@ function App() {
 
   const selectedPieceKey = useMemo(
     () =>
-      gameState.selectedPiece !== null
-        ? posToKey(gameState.selectedPiece)
+      gameState.selectedSquare !== null
+        ? posToKey(gameState.selectedSquare)
         : null,
-    [gameState.selectedPiece],
+    [gameState.selectedSquare],
   );
 
   const validMovePositions = useMemo(() => {
@@ -139,57 +156,6 @@ function App() {
     );
   }, [gameState.validMovesFromPosition, selectedPieceKey]);
 
-  const nextTurn = () => {
-    setGameState((gameState) =>
-      applyNewTurnToGameState(gameState, gameState.player === "w" ? "b" : "w"),
-    );
-  };
-
-  const onCapturePiece = (
-    gameState: IGameState,
-    capturedPiecePosition: IPosition,
-  ) => {
-    const piece =
-      gameState.board[capturedPiecePosition.r][capturedPiecePosition.c];
-    if (!piece) {
-      throw new Error(
-        `No piece to capture at (${capturedPiecePosition.c}, ${capturedPiecePosition.c})`,
-      );
-    }
-  };
-
-  const onMovePiece = (currentPosition: IPosition, newPosition: IPosition) => {
-    setGameState((gameState) => {
-      const piece = gameState.board[currentPosition.r][currentPosition.c];
-      if (!piece) {
-        throw new Error(
-          `There is not currently a piece at (${currentPosition.c}, ${currentPosition.c})`,
-        );
-      }
-
-      const pieceToCapture = gameState.board[newPosition.r][newPosition.c];
-      if (pieceToCapture) {
-        if (pieceToCapture.player === gameState.player) {
-          throw new Error(`Player cannot capture their own piece`);
-        }
-        onCapturePiece(gameState, pieceToCapture.position);
-      }
-
-      gameState.board[currentPosition.r][currentPosition.c] = null;
-      gameState.board[newPosition.r][newPosition.c] = {
-        ...piece,
-        position: newPosition,
-      };
-
-      return {
-        ...gameState,
-        player: gameState.player === "w" ? "b" : "w",
-        board: [...gameState.board] as unknown as IGameState["board"],
-      };
-    });
-    nextTurn();
-  };
-
   const turnText = gameState.player === "w" ? "White to move" : "Black to move";
 
   const onClickSquare = (
@@ -200,52 +166,21 @@ function App() {
       squarePiece && squarePiece.player === gameState.player;
 
     if (isSelectingOwnPiece) {
-      setGameState((s) => ({ ...s, selectedPiece: squarePiece.position }));
+      setGameState((s) => ({
+        ...s,
+        selectedSquare: squarePiece.getPosition(),
+      }));
       return;
     }
 
-    // if not selecting own piece and doesn't have a piece currently selected,
-    // selecting a square doesn't do anything
-    if (!gameState.selectedPiece) {
+    const isValidMove = validMovePositions.has(posToKey(squarePosition));
+    if (!isValidMove) {
       return;
     }
 
-    // TODO: compute this?
-    const isInRangeOfSelectedPiece = false;
-    if (!isInRangeOfSelectedPiece) {
-      return;
-    }
-
-    if (squarePiece) {
-      // TODO: compute this?
-      const isEnemyPiece =
-        squarePiece && squarePiece.player !== gameState.player;
-    } else {
-      if (isInRangeOfSelectedPiece) {
-        // move there
-      } else {
-        // noop, not in range
-      }
-    }
-
-    // if selected piece:
-    // - if square is empty & in range, move there
-    // - if square is empty & not in range, noop
-    // - if square has own piece, select it
-    // - if square has enemy piece & in range, move there & take it
-    //
-    // if no selected piece:
-    // - if square is empty, noop
-    // - if is enemy piece, noop
-    // - if is own piece, select it
-    const isValidMovePosition = false;
-    if (!squarePiece) {
-      setGameState((s) => ({ ...s, selectedPiece: null }));
-      return;
-    }
-
-    if (squarePiece.player !== gameState.player) return;
-    setGameState((s) => ({ ...s, selectedPiece: squarePiece.position }));
+    const newGameState = applyMoveTurnToGameState(gameState, squarePosition);
+    console.log(newGameState.board[3]);
+    setGameState(newGameState);
   };
 
   return (
@@ -259,25 +194,17 @@ function App() {
           const isSelected = key === selectedPieceKey;
           const isMoveTarget = validMovePositions.has(key);
 
-          if (!Piece) {
-            return (
-              <Square className={squareClassName} key={key}>
-                {isMoveTarget && <MoveTargetIndicator />}
-                <Fragment />
-              </Square>
-            );
-          }
-
           return (
             <Square
               key={key}
-              onClick={() => onClickSquare({ r: r, c: c }, Piece)}
-              className={classNames(squareClassName, "withPiece", {
+              onClick={() => onClickSquare({ r, c }, Piece)}
+              className={classNames(squareClassName, {
+                withPiece: !!Piece,
                 selected: isSelected,
               })}
             >
               {isMoveTarget && <MoveTargetIndicator />}
-              <Piece.Component isSelected={isSelected} />
+              {Piece && <Piece.Component isSelected={isSelected} />}
             </Square>
           );
         });
@@ -288,39 +215,65 @@ function App() {
   );
 }
 
-function MoveTargetIndicator() {
-  return (
-    <div className="MoveTarget">
-      <div />
-    </div>
-  );
-}
-
-function applyNewTurnToGameState(
+function applyMoveTurnToGameState(
   gameState: IGameState,
-  newPlayerTurn: "w" | "b",
+  moveTo: IPosition | null, // passed as null when computing initial gameState
 ): IGameState {
-  const validMovesFromPosition: Map<string, Set<string>> = new Map();
-  gameState.board.forEach((row) => {
+  const newBoard: Board = [...gameState.board];
+  const newPlayer = moveTo ? (gameState.player === "w" ? "b" : "w") : "w";
+  const newCapturedPieces = { ...gameState.capturedPieces };
+
+  const { selectedSquare } = gameState;
+
+  if (moveTo && !selectedSquare) {
+    throw new Error("Cannot move while applying turn without a selected piece");
+  }
+
+  if (moveTo && selectedSquare) {
+    const selectedPiece = newBoard[selectedSquare.r][selectedSquare.c];
+    if (!selectedPiece) {
+      throw new Error("Invalid selected piece position");
+    }
+
+    // track if a piece is being captured
+    if (newBoard[moveTo.r][moveTo.c]) {
+      newCapturedPieces[newPlayer].push(newBoard[moveTo.r][moveTo.c]!);
+    }
+
+    // move piece to new square
+    newBoard[selectedSquare.r][selectedSquare.c] = null;
+    newBoard[moveTo.r][moveTo.c] = selectedPiece;
+    selectedPiece.setPosition(moveTo);
+
+    // TODO: edge cases with side effects:
+    // - en passant
+    // - castling
+    // - converting a pawn
+
+    // TODO: compute whether or not king is now in check or checkmate
+  }
+
+  const newGameState: IGameState = {
+    board: newBoard,
+    validMovesFromPosition: new Map(),
+    selectedSquare: null,
+    player: newPlayer,
+    capturedPieces: newCapturedPieces,
+  };
+
+  newGameState.board.forEach((row) => {
     row.forEach((piece) => {
-      if (!piece) return;
-      if (piece.player !== newPlayerTurn) return;
+      // check valid moves for only squares occupied by the new player's pieces
+      if (!(piece && piece.player === newPlayer)) return;
 
-      // TODO: compute whether or not king is in check for new player
-
-      const validMovePositions = piece.getValidMovePositions(gameState);
-      if (!validMovePositions.size) return;
-
-      validMovesFromPosition.set(posToKey(piece.position), validMovePositions);
+      newGameState.validMovesFromPosition.set(
+        posToKey(piece.getPosition()),
+        piece.getValidMovePositions(newGameState),
+      );
     });
   });
 
-  return {
-    board: gameState.board,
-    validMovesFromPosition,
-    selectedPiece: null,
-    player: newPlayerTurn,
-  };
+  return newGameState;
 }
 
 interface ISquareProps
@@ -343,11 +296,17 @@ function Row(props: { children?: React.ReactNode }) {
 
 export default App;
 
+type Board = IPieceOnBoard[][];
+
 interface IGameState {
   player: Color;
-  board: FixedLengthArray<FixedLengthArray<IPieceOnBoard, 8>, 8>;
-  selectedPiece: IPosition | null;
+  board: Board;
+  selectedSquare: IPosition | null;
   validMovesFromPosition: Map<string, Set<string>>;
+  capturedPieces: {
+    w: IPiece[];
+    b: IPiece[];
+  };
 }
 
 interface IPosition {
@@ -355,13 +314,21 @@ interface IPosition {
   c: number;
 }
 
-interface IPiece {
-  name: string;
-  player: Color;
-  position: IPosition;
+interface IPieceBase {
+  readonly name: string;
+  readonly player: Color;
+}
+
+interface IPieceMethods {
   getValidMovePositions(gameState: IGameState): Set<string>;
+  getPlayer: () => Color;
+  setPlayer: (player: Color) => void;
+  getPosition: () => IPosition;
+  setPosition: (pos: IPosition) => void;
   Component: (props: { isSelected: boolean }) => React.ReactNode;
 }
+
+type IPiece = IPieceBase & IPieceMethods;
 
 type IPieceOnBoard = IPiece | null;
 
@@ -385,16 +352,13 @@ function PieceComponent(props: IPieceComponentProps) {
   );
 }
 
-// Helpers
-type ArrayLengthMutationKeys = "splice" | "push" | "pop" | "shift" | "unshift";
-type FixedLengthArray<T, L extends number, TObj = [T, ...Array<T>]> = Pick<
-  TObj,
-  Exclude<keyof TObj, ArrayLengthMutationKeys>
-> & {
-  readonly length: L;
-  [I: number]: T;
-  [Symbol.iterator]: () => IterableIterator<T>;
-};
+function MoveTargetIndicator() {
+  return (
+    <div className="MoveTarget">
+      <div />
+    </div>
+  );
+}
 
 /*
 Game loop:
