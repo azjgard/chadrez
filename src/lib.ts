@@ -1,37 +1,65 @@
-import imgBlackPawn from "./assets/chess/PNGs/No shadow/1x/b_pawn_1x_ns.png";
-import imgBlackRook from "./assets/chess/PNGs/No shadow/1x/b_rook_1x_ns.png";
-import imgBlackKnight from "./assets/chess/PNGs/No shadow/1x/b_knight_1x_ns.png";
-import imgBlackBishop from "./assets/chess/PNGs/No shadow/1x/b_bishop_1x_ns.png";
-import imgBlackQueen from "./assets/chess/PNGs/No shadow/1x/b_queen_1x_ns.png";
-import imgBlackKing from "./assets/chess/PNGs/No shadow/1x/b_king_1x_ns.png";
-import imgWhitePawn from "./assets/chess/PNGs/No shadow/1x/w_pawn_1x_ns.png";
-import imgWhiteRook from "./assets/chess/PNGs/No shadow/1x/w_rook_1x_ns.png";
-import imgWhiteKnight from "./assets/chess/PNGs/No shadow/1x/w_knight_1x_ns.png";
-import imgWhiteBishop from "./assets/chess/PNGs/No shadow/1x/w_bishop_1x_ns.png";
-import imgWhiteQueen from "./assets/chess/PNGs/No shadow/1x/w_queen_1x_ns.png";
-import imgWhiteKing from "./assets/chess/PNGs/No shadow/1x/w_king_1x_ns.png";
-
 export type Color = "w" | "b";
 
 export type Piece = "pawn" | "rook" | "knight" | "bishop" | "queen" | "king";
 
-type PieceImageMap = { [key in Color]: { [key in Piece]: string } };
+export function posToKey(pos: IPosition | number, c?: number) {
+  if (typeof pos === "number" && typeof c === "number") {
+    return +pos + "__" + c;
+  }
 
-export const defaultPieceImageMap: PieceImageMap = {
-  w: {
-    pawn: imgWhitePawn,
-    rook: imgWhiteRook,
-    knight: imgWhiteKnight,
-    bishop: imgWhiteBishop,
-    queen: imgWhiteQueen,
-    king: imgWhiteKing,
-  },
-  b: {
-    pawn: imgBlackPawn,
-    rook: imgBlackRook,
-    knight: imgBlackKnight,
-    bishop: imgBlackBishop,
-    queen: imgBlackQueen,
-    king: imgBlackKing,
-  },
-};
+  if (typeof pos === "object") {
+    return +pos.r + "__" + pos.c;
+  }
+
+  throw new Error("Invalid posToKey");
+}
+
+export function keyToPos(pos: string) {
+  const [rStr, cStr] = pos.split("__");
+
+  const r = parseInt(rStr);
+  if (isNaN(r)) throw new Error("Invalid pos key parsing r: " + pos);
+
+  const c = parseInt(cStr);
+  if (isNaN(c)) throw new Error("Invalid pos key parsing c: " + pos);
+
+  return { r, c };
+}
+
+export function posOnBoard(p: IPosition, boardSize: number = 7) {
+  return p.r >= 0 && p.r <= boardSize;
+}
+
+export type Board = IPieceOnBoard[][];
+
+export interface IGameState {
+  player: Color;
+  board: Board;
+  selectedSquare: IPosition | null;
+  validMovesFromPosition: Map<string, Set<string>>;
+  capturedPieces: {
+    w: IPiece[];
+    b: IPiece[];
+  };
+}
+
+export interface IPosition {
+  r: number;
+  c: number;
+}
+
+export interface IPieceBase {
+  readonly name: Piece;
+}
+
+export interface IPieceMethods {
+  getValidMovePositions(gameState: IGameState): Set<string>;
+  getPlayer: () => Color;
+  setPlayer: (player: Color) => void;
+  getPosition: () => IPosition;
+  setPosition: (pos: IPosition) => void;
+}
+
+export type IPiece = IPieceBase & IPieceMethods;
+
+export type IPieceOnBoard = IPiece | null;
