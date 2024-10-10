@@ -1,17 +1,23 @@
-import { applyMoveTurnToGameState, getInitialGameState } from "../gameState";
+import {
+  applyMoveTurnToGameState,
+  getInitialGameState,
+  serializeBoard,
+} from "../gameState";
 
-test("Pawns cannot move through other pieces", () => {
+test("Pawns can move", () => {
   let state = getInitialGameState([
-    [" ", " ", "K", " ", " ", " "],
-    [" ", " ", " ", " ", " ", " "],
-    [" ", " ", "P", " ", " ", " "],
-    [" ", " ", " ", " ", " ", " "],
-    [" ", "p", "k", " ", " ", " "],
+    [" ", "P", "K"],
+    [" ", " ", " "],
+    [" ", "k", " "],
   ]);
 
   state.selectedSquare = { r: 0, c: 1 };
 
   state = applyMoveTurnToGameState(state, { r: 1, c: 1 });
 
-  console.log(JSON.stringify(state, null, 2));
+  expect(serializeBoard(state.board)).toEqual([
+    [" ", " ", "K"],
+    [" ", "P", " "],
+    [" ", "k", " "],
+  ]);
 });

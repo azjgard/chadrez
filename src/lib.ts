@@ -26,8 +26,8 @@ export function keyToPos(pos: string) {
   return { r, c };
 }
 
-export function posOnBoard(p: IPosition, boardSize: number = 7) {
-  return p.r >= 0 && p.r <= boardSize;
+export function posOnBoard(p: IPosition, boardSize: number) {
+  return p.r >= 0 && p.r <= boardSize - 1;
 }
 
 export type Board = IPieceOnBoard[][];

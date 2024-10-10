@@ -3,7 +3,7 @@ import * as Pieces from "./pieces";
 
 // need to assume that white is always on top, black is always on bottom
 // can rotate the view if needed but this simplifies the move logic significantly
-const DEFAULT_BOARD = Pieces.createBoard([
+export const DEFAULT_BOARD = Pieces.createBoard([
   ["R", "N", "B", " ", "Q", "B", "N", "R"],
   ["P", "P", "P", "P", "P", "P", "P", "P"],
   [" ", " ", " ", " ", " ", " ", " ", " "],
@@ -14,7 +14,7 @@ const DEFAULT_BOARD = Pieces.createBoard([
   ["r", "n", "b", "k", "q", "b", "n", "r"],
 ]);
 
-function initializeBoard(boardSymbols: string[][] = DEFAULT_BOARD) {
+export function deserializeBoard(boardSymbols: string[][] = DEFAULT_BOARD) {
   const board: IGameState["board"] = [];
   for (let r = 0; r < boardSymbols.length; r++) {
     const row: IGameState["board"][number] = [];
@@ -39,12 +39,39 @@ function initializeBoard(boardSymbols: string[][] = DEFAULT_BOARD) {
   return board;
 }
 
+export function serializeBoard(board: Board): string[][] {
+  const serializedBoard: string[][] = [];
+
+  board.forEach((row) =>
+    serializedBoard.push(
+      row.map((piece) =>
+        piece ? Pieces.getPieceSymbol(piece, piece.getPlayer()) : " "
+      )
+    )
+  );
+
+  return serializedBoard;
+}
+
+export function printBoard(board: string[][]) {
+  const formattedBoard: string[] = [];
+  for (let r = 0; r < board.length; r++) {
+    let row = "";
+    for (let c = 0; c < board[r].length; c++) {
+      const char = board[r][c];
+      row += `${char === " " ? "█" : char}` + " ";
+    }
+    formattedBoard.push(row);
+  }
+  console.log(formattedBoard.join("\n"));
+}
+
 export function getInitialGameState(board: string[][] = DEFAULT_BOARD) {
   let gameState: IGameState = {
     player: "w",
     selectedSquare: null,
     validMovesFromPosition: new Map(),
-    board: initializeBoard(board),
+    board: deserializeBoard(board),
     capturedPieces: { w: [], b: [] },
   };
 
@@ -55,7 +82,7 @@ export function getInitialGameState(board: string[][] = DEFAULT_BOARD) {
 
 export function applyMoveTurnToGameState(
   gameState: IGameState,
-  moveTo: IPosition | null, // passed as null when computing initial gameState
+  moveTo: IPosition | null // passed as null when computing initial gameState
 ): IGameState {
   const newBoard: Board = [...gameState.board];
   const newPlayer = moveTo ? (gameState.player === "w" ? "b" : "w") : "w";
@@ -115,22 +142,23 @@ export function applyMoveTurnToGameState(
         continue;
       }
 
+      const key = posToKey(piece.getPosition());
       newGameState.validMovesFromPosition.set(
-        posToKey(piece.getPosition()),
-        piece.getValidMovePositions(newGameState),
+        key,
+        piece.getValidMovePositions(newGameState)
       );
     }
   }
 
   if (!newPlayerKing) {
     throw new Error(
-      "Processed new game board state without detecting a friendly king",
+      "Processed new game board state without detecting a friendly king"
     );
   }
 
   newGameState.validMovesFromPosition.set(
     posToKey(newPlayerKing.getPosition()),
-    newPlayerKing.getValidMovePositions(newGameState),
+    newPlayerKing.getValidMovePositions(newGameState)
   );
 
   return newGameState;

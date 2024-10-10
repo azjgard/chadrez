@@ -15,14 +15,23 @@ export function Rook(r: number, c: number, player: "b" | "w"): IPiece {
       const position = base.getPosition();
       const helpers = createPieceHelpers(gameState, player);
 
-      const generatePositions = helpers.createPositionsGenerator(position, 8);
+      const boardSize = gameState.board.length;
 
-      const possibleMoves = createPotentialMoves([
-        ...generatePositions(-1, 0),
-        ...generatePositions(0, 1),
-        ...generatePositions(1, 0),
-        ...generatePositions(0, -1),
-      ]);
+      const generatePositions = helpers.createPositionsGenerator(
+        position,
+        8,
+        boardSize
+      );
+
+      const possibleMoves = createPotentialMoves(
+        [
+          ...generatePositions(-1, 0),
+          ...generatePositions(0, 1),
+          ...generatePositions(1, 0),
+          ...generatePositions(0, -1),
+        ],
+        boardSize
+      );
 
       return new Set(possibleMoves.map(posToKey));
     },

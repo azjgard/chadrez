@@ -40,7 +40,7 @@ export function createPieceHelpers(gameState: IGameState, player: Color) {
     // for each set of enemy valid moves in the move state
     // is targetable if set includes position
     for (const [fromPosKey, positionSet] of Array.from(
-      gameState.validMovesFromPosition.entries(),
+      gameState.validMovesFromPosition.entries()
     )) {
       const fromPos = keyToPos(fromPosKey);
       const piece = gameState.board[fromPos.r][fromPos.c];
@@ -63,7 +63,7 @@ export function createPieceHelpers(gameState: IGameState, player: Color) {
     gameState.board[p.r][p.c]!.getPlayer() === player;
 
   const createPositionsGenerator =
-    (position: IPosition, steps: number) =>
+    (position: IPosition, steps: number, boardSize: number) =>
     (rowDirection: number, columnDirection: number) => {
       let hasSeenEnemyPiece = false;
 
@@ -73,7 +73,7 @@ export function createPieceHelpers(gameState: IGameState, player: Color) {
         columnDirection,
         steps,
         (position) => {
-          if (hasSeenEnemyPiece || !posOnBoard(position)) {
+          if (hasSeenEnemyPiece || !posOnBoard(position, boardSize)) {
             return false;
           }
 
@@ -83,7 +83,7 @@ export function createPieceHelpers(gameState: IGameState, player: Color) {
           }
 
           return !isFriendlyPiece(position);
-        },
+        }
       );
     };
 
@@ -101,7 +101,7 @@ function stepPositions(
   rDir: number,
   cDir: number,
   steps: number,
-  isValid: (p: IPosition) => boolean,
+  isValid: (p: IPosition) => boolean
 ) {
   const positions: IPosition[] = [];
   for (let i = 1; i < 1 + steps; i++) {
@@ -114,6 +114,6 @@ function stepPositions(
   return positions;
 }
 
-export function createPotentialMoves(moves: IPosition[]) {
-  return moves.filter((pos) => posOnBoard(pos));
+export function createPotentialMoves(moves: IPosition[], boardSize: number) {
+  return moves.filter((pos) => posOnBoard(pos, boardSize));
 }

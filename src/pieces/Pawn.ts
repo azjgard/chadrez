@@ -14,7 +14,13 @@ export function Pawn(r: number, c: number, player: "b" | "w"): IPiece {
     getValidMovePositions(gameState) {
       const position = base.getPosition();
       const helpers = createPieceHelpers(gameState, player);
-      const generatePositions = helpers.createPositionsGenerator(position, 2);
+
+      const boardSize = gameState.board.length;
+      const generatePositions = helpers.createPositionsGenerator(
+        position,
+        2,
+        boardSize
+      );
 
       const pawnDirection = base.getPlayer() === "w" ? 1 : -1;
       const pawnStartingRow =
@@ -24,6 +30,7 @@ export function Pawn(r: number, c: number, player: "b" | "w"): IPiece {
         // pawn-specific behavior:
         // locked move direction according to color
         generatePositions(pawnDirection, 0),
+        boardSize
       ).filter((p, i) => {
         if (helpers.isPiece(p)) return false;
 
@@ -36,10 +43,13 @@ export function Pawn(r: number, c: number, player: "b" | "w"): IPiece {
         return true;
       });
 
-      const diagonal = createPotentialMoves([
-        { r: position.r + pawnDirection, c: position.c + 1 },
-        { r: position.r + pawnDirection, c: position.c - 1 },
-      ]).filter((p) => {
+      const diagonal = createPotentialMoves(
+        [
+          { r: position.r + pawnDirection, c: position.c + 1 },
+          { r: position.r + pawnDirection, c: position.c - 1 },
+        ],
+        boardSize
+      ).filter((p) => {
         const pieceOnSquare = gameState.board[p.r][p.c];
 
         // can only move diagonal if there's an enemy piece in the diagonal square
