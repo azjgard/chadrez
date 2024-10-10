@@ -95,6 +95,13 @@ export function applyMoveTurnToGameState(
   }
 
   if (moveTo && selectedSquare) {
+    const moveIsValid = gameState.validMovesFromPosition
+      .get(posToKey(selectedSquare))
+      ?.has(posToKey(moveTo));
+    if (!moveIsValid) {
+      throw new Error("Invalid move");
+    }
+
     const selectedPiece = newBoard[selectedSquare.r][selectedSquare.c];
     if (!selectedPiece) {
       throw new Error("Invalid selected piece position");
