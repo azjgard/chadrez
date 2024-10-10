@@ -1,23 +1,43 @@
-import {
-  applyMoveTurnToGameState,
-  getInitialGameState,
-  serializeBoard,
-} from "../gameState";
+import { getInitialGameState } from "../gameState";
+import { posToKey } from "../lib";
 
-test("Pawns can move", () => {
-  let state = getInitialGameState([
-    [" ", "P", "K"],
+test("Pawns can move one or two spaces off their starting square", () => {
+  const state = getInitialGameState([
+    [" ", " ", "K"],
+    [" ", "P", " "],
+    [" ", " ", " "],
     [" ", " ", " "],
     [" ", "k", " "],
   ]);
 
-  state.selectedSquare = { r: 0, c: 1 };
+  const validPawnMoves = state.validMovesFromPosition.get(
+    posToKey({ r: 1, c: 1 })
+  )!;
+  expect(validPawnMoves.size).toBe(2);
+  expect(validPawnMoves.has(posToKey({ r: 2, c: 1 }))).toBe(true);
+  expect(validPawnMoves.has(posToKey({ r: 3, c: 1 }))).toBe(true);
+});
 
-  state = applyMoveTurnToGameState(state, { r: 1, c: 1 });
-
-  expect(serializeBoard(state.board)).toEqual([
-    [" ", " ", "K"],
-    [" ", "P", " "],
+test("Pawns cannot move through pieces", () => {
+  const state = getInitialGameState([
+    [" ", "P", "K"],
     [" ", "k", " "],
   ]);
+  const validPawnMoves = state.validMovesFromPosition.get(
+    posToKey({ r: 0, c: 1 })
+  )!;
+  expect(validPawnMoves.size).toBe(0);
+});
+
+test("Pawns can capture diagonally", () => {
+  const state = getInitialGameState([
+    [" ", "P", "K"],
+    ["p", "k", "p"],
+  ]);
+  const validPawnMoves = state.validMovesFromPosition.get(
+    posToKey({ r: 0, c: 1 })
+  )!;
+  expect(validPawnMoves.size).toBe(2);
+  expect(validPawnMoves.has(posToKey({ r: 1, c: 0 }))).toBe(true);
+  expect(validPawnMoves.has(posToKey({ r: 1, c: 2 }))).toBe(true);
 });
