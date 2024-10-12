@@ -9,6 +9,7 @@ import { defaultPieceImageMap } from "./assets/pieceImages";
 
 function App() {
   const [gameState, setGameState] = useState(getInitialGameState());
+  const [copyText, setCopyText] = useState("Copy board to clipboard");
 
   const selectedPieceKey = useMemo(
     () =>
@@ -84,6 +85,16 @@ function App() {
         return <Row key={`r${r}`}>{rowData}</Row>;
       })}
       <CapturedPieces gameState={gameState} player="w" />
+
+      <button
+        onClick={async () => {
+          await navigator.clipboard.writeText(JSON.stringify(gameState.board));
+          setCopyText("Copied!");
+          setTimeout(() => setCopyText("Copy board to clipboard"), 1000);
+        }}
+      >
+        {copyText}
+      </button>
     </div>
   );
 }
