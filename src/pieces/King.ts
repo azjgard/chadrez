@@ -1,38 +1,29 @@
-import { IPiece, posToKey } from "../lib";
-import {
-  createPieceHelpers,
-  createPotentialMoves,
-  usePieceBaseProperties,
-} from "./lib";
+import * as Pieces from ".";
+import { IPosition, posToKey } from "../lib";
+import { createPieceHelpers, createPotentialMoves } from "./lib";
 
-export function King(r: number, c: number, player: "b" | "w"): IPiece {
-  const base = usePieceBaseProperties({ r, c }, player);
+export function King(
+  board: Pieces.PieceSymbol[][],
+  pos: IPosition
+): Set<string> {
+  const { player } = Pieces.getPiece(board[pos.r][pos.c]);
+  const helpers = createPieceHelpers(board, player);
 
-  return {
-    ...base,
-    name: "king",
-    getValidMovePositions(gameState) {
-      const position = base.getPosition();
-      const helpers = createPieceHelpers(gameState, player);
-      // TODO: disallow the king from moving into check, will require changing valid move
-      // computation to always do both sides at once
-      const possibleMoves = createPotentialMoves(
-        [
-          { r: position.r - 1, c: position.c },
-          { r: position.r - 1, c: position.c + 1 },
-          { r: position.r, c: position.c + 1 },
-          { r: position.r + 1, c: position.c + 1 },
-          { r: position.r + 1, c: position.c },
-          { r: position.r + 1, c: position.c - 1 },
-          { r: position.r, c: position.c - 1 },
-          { r: position.r - 1, c: position.c - 1 },
-        ],
-        gameState.board.length
-      ).filter((p) => {
-        helpers.isFriendlyPiece(p) || helpers.isTargetableByEnemyPiece(p);
-      });
+  // TODO: disallow the king from moving into check, will require changing valid move
+  // computation to always do both sides at once
+  const possibleMoves = createPotentialMoves(
+    [
+      { r: pos.r - 1, c: pos.c },
+      { r: pos.r - 1, c: pos.c + 1 },
+      { r: pos.r, c: pos.c + 1 },
+      { r: pos.r + 1, c: pos.c + 1 },
+      { r: pos.r + 1, c: pos.c },
+      { r: pos.r + 1, c: pos.c - 1 },
+      { r: pos.r, c: pos.c - 1 },
+      { r: pos.r - 1, c: pos.c - 1 },
+    ],
+    board.length
+  ).filter((p) => !helpers.isFriendlyPiece(p));
 
-      return new Set(possibleMoves.map(posToKey));
-    },
-  };
+  return new Set(possibleMoves.map(posToKey));
 }

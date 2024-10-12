@@ -1,3 +1,5 @@
+import * as Pieces from "./pieces";
+
 export type Color = "w" | "b";
 
 export type Piece = "pawn" | "rook" | "knight" | "bishop" | "queen" | "king";
@@ -34,12 +36,12 @@ export type Board = IPieceOnBoard[][];
 
 export interface IGameState {
   player: Color;
-  board: Board;
+  board: Pieces.PieceSymbol[][];
   selectedSquare: IPosition | null;
   validMovesFromPosition: Map<string, Set<string>>;
   capturedPieces: {
-    w: IPiece[];
-    b: IPiece[];
+    w: Pieces.PieceSymbol[];
+    b: Pieces.PieceSymbol[];
   };
 }
 

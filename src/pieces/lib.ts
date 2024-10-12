@@ -1,66 +1,21 @@
-import {
-  Color,
-  IGameState,
-  IPosition,
-  keyToPos,
-  posOnBoard,
-  posToKey,
-} from "../lib";
+import * as Pieces from ".";
+import { Color, IPosition, posOnBoard } from "../lib";
 
-export function usePieceBaseProperties(position: IPosition, player: Color) {
-  let _position = { ...position };
-  let _player = player;
+export function createPieceHelpers(
+  board: Pieces.PieceSymbol[][],
+  player: Color
+) {
+  const isPiece = (p: IPosition) => Pieces.isNonEmptySymbol(board[p.r][p.c]);
 
-  function getPlayer() {
-    return _player;
-  }
-
-  function setPlayer(p: Color) {
-    _player = p;
-  }
-
-  function getPosition() {
-    return _position;
-  }
-
-  function setPosition(p: IPosition) {
-    _position = p;
-  }
-
-  return {
-    getPlayer,
-    setPlayer,
-    getPosition,
-    setPosition,
-  };
-}
-
-export function createPieceHelpers(gameState: IGameState, player: Color) {
-  const isTargetableByEnemyPiece = (p: IPosition) => {
-    // for each set of enemy valid moves in the move state
-    // is targetable if set includes position
-    for (const [fromPosKey, positionSet] of Array.from(
-      gameState.validMovesFromPosition.entries()
-    )) {
-      const fromPos = keyToPos(fromPosKey);
-      const piece = gameState.board[fromPos.r][fromPos.c];
-      // only check enemy players
-      if (!(piece && piece.getPlayer() !== player)) continue;
-      if (positionSet.has(posToKey(p))) return true;
-    }
-
-    return false;
+  const isEnemyPiece = (p: IPosition) => {
+    const maybePiece = Pieces.maybeGetPiece(board[p.r][p.c]);
+    return maybePiece && maybePiece.player !== player;
   };
 
-  const isPiece = (p: IPosition) => !!gameState.board[p.r][p.c];
-
-  const isEnemyPiece = (p: IPosition) =>
-    gameState.board[p.r][p.c] &&
-    gameState.board[p.r][p.c]!.getPlayer() !== player;
-
-  const isFriendlyPiece = (p: IPosition) =>
-    gameState.board[p.r][p.c] &&
-    gameState.board[p.r][p.c]!.getPlayer() === player;
+  const isFriendlyPiece = (p: IPosition) => {
+    const maybePiece = Pieces.maybeGetPiece(board[p.r][p.c]);
+    return maybePiece && maybePiece.player === player;
+  };
 
   const createPositionsGenerator =
     (position: IPosition, steps: number, boardSize: number) =>
@@ -91,7 +46,6 @@ export function createPieceHelpers(gameState: IGameState, player: Color) {
     isPiece,
     isEnemyPiece,
     isFriendlyPiece,
-    isTargetableByEnemyPiece,
     createPositionsGenerator,
   };
 }

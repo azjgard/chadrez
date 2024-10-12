@@ -1,62 +1,46 @@
-import { IPiece, posToKey } from "../lib";
-import {
-  createPieceHelpers,
-  createPotentialMoves,
-  usePieceBaseProperties,
-} from "./lib";
+import * as Pieces from ".";
+import { IPosition, posToKey } from "../lib";
+import { createPieceHelpers, createPotentialMoves } from "./lib";
 
-export function Pawn(r: number, c: number, player: "b" | "w"): IPiece {
-  const base = usePieceBaseProperties({ r, c }, player);
+export function Pawn(
+  board: Pieces.PieceSymbol[][],
+  pos: IPosition
+): Set<string> {
+  const { player } = Pieces.getPiece(board[pos.r][pos.c]);
 
-  return {
-    ...base,
-    name: "pawn",
-    getValidMovePositions(gameState) {
-      const position = base.getPosition();
-      const helpers = createPieceHelpers(gameState, player);
+  const helpers = createPieceHelpers(board, player);
+  const boardSize = board.length;
+  const generatePositions = helpers.createPositionsGenerator(pos, 2, boardSize);
+  const pawnDirection = player === "w" ? 1 : -1;
+  const pawnStartingRow = player === "w" ? 1 : board.length - 2;
 
-      const boardSize = gameState.board.length;
-      const generatePositions = helpers.createPositionsGenerator(
-        position,
-        2,
-        boardSize
-      );
+  const forward = createPotentialMoves(
+    // pawn-specific behavior:
+    // locked move direction according to color
+    generatePositions(pawnDirection, 0),
+    boardSize
+  ).filter((p, i) => {
+    if (helpers.isPiece(p)) return false;
+    // pawn-specific behavior:
+    // can't move 2 squares unless pawn is on starting row
+    if (i === 1 && pos.r !== pawnStartingRow) {
+      return false;
+    }
+    return true;
+  });
 
-      const pawnDirection = base.getPlayer() === "w" ? 1 : -1;
-      const pawnStartingRow =
-        base.getPlayer() === "w" ? 1 : gameState.board.length - 2;
+  const diagonal = createPotentialMoves(
+    [
+      { r: pos.r + pawnDirection, c: pos.c + 1 },
+      { r: pos.r + pawnDirection, c: pos.c - 1 },
+    ],
+    boardSize
+  ).filter((p) => {
+    const maybePiece = Pieces.maybeGetPiece(board[p.r][p.c]);
 
-      const forward = createPotentialMoves(
-        // pawn-specific behavior:
-        // locked move direction according to color
-        generatePositions(pawnDirection, 0),
-        boardSize
-      ).filter((p, i) => {
-        if (helpers.isPiece(p)) return false;
+    // can only move diagonal if there's an enemy piece in the diagonal square
+    return maybePiece && maybePiece.player !== player;
+  });
 
-        // pawn-specific behavior:
-        // can't move 2 squares unless pawn is on starting row
-        if (i === 1 && position.r !== pawnStartingRow) {
-          return false;
-        }
-
-        return true;
-      });
-
-      const diagonal = createPotentialMoves(
-        [
-          { r: position.r + pawnDirection, c: position.c + 1 },
-          { r: position.r + pawnDirection, c: position.c - 1 },
-        ],
-        boardSize
-      ).filter((p) => {
-        const pieceOnSquare = gameState.board[p.r][p.c];
-
-        // can only move diagonal if there's an enemy piece in the diagonal square
-        return pieceOnSquare && pieceOnSquare.getPlayer() !== base.getPlayer();
-      });
-
-      return new Set([...forward, ...diagonal].map(posToKey));
-    },
-  };
+  return new Set([...forward, ...diagonal].map(posToKey));
 }

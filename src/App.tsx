@@ -1,14 +1,7 @@
 import { useState, useMemo } from "react";
 import classNames from "classnames";
-import {
-  Color,
-  IGameState,
-  IPiece,
-  IPieceOnBoard,
-  IPosition,
-  Piece,
-  posToKey,
-} from "./lib";
+import * as Pieces from "./pieces";
+import { Color, IGameState, IPosition, posToKey } from "./lib";
 import { applyMoveTurnToGameState, getInitialGameState } from "./gameState";
 
 import "./App.css";
@@ -22,7 +15,7 @@ function App() {
       gameState.selectedSquare !== null
         ? posToKey(gameState.selectedSquare)
         : null,
-    [gameState.selectedSquare],
+    [gameState.selectedSquare]
   );
 
   const validMovePositions = useMemo(() => {
@@ -36,27 +29,26 @@ function App() {
 
   const turnText = gameState.player === "w" ? "White to move" : "Black to move";
 
-  const onClickSquare = (
-    squarePosition: IPosition,
-    squarePiece: IPieceOnBoard,
-  ) => {
+  const onClickSquare = (pos: IPosition) => {
+    const maybePiece = Pieces.maybeGetPiece(gameState.board[pos.r][pos.c]);
+
     const isSelectingOwnPiece =
-      squarePiece && squarePiece.getPlayer() === gameState.player;
+      maybePiece && maybePiece.player === gameState.player;
 
     if (isSelectingOwnPiece) {
       setGameState((s) => ({
         ...s,
-        selectedSquare: squarePiece.getPosition(),
+        selectedSquare: pos,
       }));
       return;
     }
 
-    const isValidMove = validMovePositions.has(posToKey(squarePosition));
+    const isValidMove = validMovePositions.has(posToKey(pos));
     if (!isValidMove) {
       return;
     }
 
-    const newGameState = applyMoveTurnToGameState(gameState, squarePosition);
+    const newGameState = applyMoveTurnToGameState(gameState, pos);
     setGameState(newGameState);
   };
 
@@ -65,7 +57,7 @@ function App() {
       {turnText}
       <CapturedPieces gameState={gameState} player="b" />
       {gameState.board.map((row, r) => {
-        const rowData = row.map((Piece, c) => {
+        const rowData = row.map((pieceSymbol, c) => {
           const squareClassName = (r + c) % 2 === 0 ? "light" : "dark";
           const key = posToKey({ r, c });
 
@@ -75,19 +67,15 @@ function App() {
           return (
             <Square
               key={key}
-              onClick={() => onClickSquare({ r, c }, Piece)}
+              onClick={() => onClickSquare({ r, c })}
               className={classNames(squareClassName, {
-                withPiece: !!Piece,
+                withPiece: !!pieceSymbol,
                 selected: isSelected,
               })}
             >
               {isMoveTarget && <MoveTargetIndicator />}
-              {Piece && (
-                <PieceComponent
-                  name={Piece.name}
-                  player={Piece.getPlayer()}
-                  isSelected={isSelected}
-                />
+              {Pieces.isNonEmptySymbol(pieceSymbol) && (
+                <PieceComponent symbol={pieceSymbol} isSelected={isSelected} />
               )}
             </Square>
           );
@@ -129,37 +117,32 @@ function MoveTargetIndicator() {
 function CapturedPieces(props: { gameState: IGameState; player: Color }) {
   return (
     <div className="CapturedPiecesContainer">
-      {props.gameState.capturedPieces[props.player].map((piece, i) => (
-        <CapturedPiece key={i} piece={piece} player={props.player} />
+      {props.gameState.capturedPieces[props.player].map((symbol, i) => (
+        <CapturedPiece key={i} symbol={symbol} />
       ))}
     </div>
   );
 }
 
-function CapturedPiece(props: { piece: IPiece; player: Color }) {
+function CapturedPiece(props: { symbol: Pieces.PieceSymbol }) {
   return (
     <div className="CapturedPiece">
-      <PieceComponent
-        {...props.piece}
-        player={props.player}
-        isSelected={false}
-      />
+      <PieceComponent {...props} isSelected={false} />
     </div>
   );
 }
 
 interface IPieceComponentProps {
-  player: Color;
-  name: Piece;
+  symbol: Pieces.PieceSymbol;
   className?: string;
   isSelected: boolean;
 }
 
 export function PieceComponent(props: IPieceComponentProps) {
-  const src = useMemo(
-    () => defaultPieceImageMap[props.player][props.name],
-    [props.name, props.player],
-  );
+  const src = useMemo(() => {
+    const piece = Pieces.getPiece(props.symbol);
+    return defaultPieceImageMap[piece.player][piece.name];
+  }, [props.symbol]);
 
   return (
     <div className={classNames("PieceContainer", props.className)}>

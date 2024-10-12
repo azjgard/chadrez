@@ -1,4 +1,4 @@
-import { IPiece, Piece } from "../lib";
+import { Color, IPosition, Piece } from "../lib";
 import { Bishop } from "./Bishop";
 import { King } from "./King";
 import { Knight } from "./Knight";
@@ -10,49 +10,54 @@ export { Bishop, King, Knight, Pawn, Queen, Rook };
 
 const SYMBOL_TO_PIECE = {
   " ": null,
-  P: [Pawn, "w"],
-  p: [Pawn, "b"],
-  N: [Knight, "w"],
-  n: [Knight, "b"],
-  B: [Bishop, "w"],
-  b: [Bishop, "b"],
-  R: [Rook, "w"],
-  r: [Rook, "b"],
-  K: [King, "w"],
-  k: [King, "b"],
-  Q: [Queen, "w"],
-  q: [Queen, "b"],
+  P: { piece: Pawn, player: "w", name: "pawn" },
+  p: { piece: Pawn, player: "b", name: "pawn" },
+  N: { piece: Knight, player: "w", name: "knight" },
+  n: { piece: Knight, player: "b", name: "knight" },
+  B: { piece: Bishop, player: "w", name: "bishop" },
+  b: { piece: Bishop, player: "b", name: "bishop" },
+  R: { piece: Rook, player: "w", name: "rook" },
+  r: { piece: Rook, player: "b", name: "rook" },
+  K: { piece: King, player: "w", name: "king" },
+  k: { piece: King, player: "b", name: "king" },
+  Q: { piece: Queen, player: "w", name: "queen" },
+  q: { piece: Queen, player: "b", name: "queen" },
 } as const;
 
-const PIECE_NAME_TO_SYMBOL: {
-  [key in Piece]: {
-    [player in "b" | "w"]: PieceSymbol;
-  };
-} = {
-  bishop: { w: "B", b: "b" },
-  king: { w: "K", b: "k" },
-  knight: { w: "N", b: "n" },
-  pawn: { w: "P", b: "p" },
-  queen: { w: "Q", b: "q" },
-  rook: { w: "R", b: "r" },
-};
-
 export type PieceSymbol = keyof typeof SYMBOL_TO_PIECE;
+export type PieceFunction = (
+  board: PieceSymbol[][],
+  pos: IPosition
+) => Set<string>;
 
 export function isValidSymbol(symbol: string): symbol is PieceSymbol {
   return symbol in SYMBOL_TO_PIECE;
 }
 
-export function getSymbol<T extends PieceSymbol>(
-  key: T
-): (typeof SYMBOL_TO_PIECE)[T] {
-  return SYMBOL_TO_PIECE[key];
+export function isNonEmptySymbol(
+  symbol: string
+): symbol is Exclude<PieceSymbol, " "> {
+  return symbol !== " " && isValidSymbol(symbol);
 }
 
-export function getPieceSymbol(piece: IPiece, player: "b" | "w") {
-  return PIECE_NAME_TO_SYMBOL[piece.name][player];
+interface IPieceInfo {
+  symbol: PieceSymbol;
+  name: Piece;
+  piece: PieceFunction;
+  player: Color;
 }
 
-export function createBoard(board: PieceSymbol[][]) {
-  return board;
+export function maybeGetPiece(key: string): ReturnType<typeof getPiece> | null {
+  try {
+    return getPiece(key);
+  } catch {
+    return null;
+  }
+}
+
+export function getPiece(symbol: string): IPieceInfo {
+  if (!isNonEmptySymbol(symbol))
+    throw new Error(`Invalid piece symbol: '${symbol}'`);
+
+  return { ...SYMBOL_TO_PIECE[symbol], symbol };
 }

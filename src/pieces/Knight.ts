@@ -1,33 +1,25 @@
-import { IPiece, posToKey } from "../lib";
-import {
-  createPieceHelpers,
-  createPotentialMoves,
-  usePieceBaseProperties,
-} from "./lib";
+import * as Pieces from ".";
+import { IPosition, posToKey } from "../lib";
+import { createPieceHelpers, createPotentialMoves } from "./lib";
 
-export function Knight(r: number, c: number, player: "b" | "w"): IPiece {
-  const base = usePieceBaseProperties({ r, c }, player);
-
-  return {
-    ...base,
-    name: "knight",
-    getValidMovePositions(gameState) {
-      const position = base.getPosition();
-      const helpers = createPieceHelpers(gameState, player);
-      const possibleMoves = createPotentialMoves(
-        [
-          { r: position.r - 2, c: position.c + 1 },
-          { r: position.r - 1, c: position.c + 2 },
-          { r: position.r + 1, c: position.c + 2 },
-          { r: position.r + 2, c: position.c + 1 },
-          { r: position.r + 2, c: position.c - 1 },
-          { r: position.r + 1, c: position.c - 2 },
-          { r: position.r - 1, c: position.c - 2 },
-          { r: position.r - 2, c: position.c - 1 },
-        ],
-        gameState.board.length
-      ).filter((p) => !helpers.isFriendlyPiece(p));
-      return new Set(possibleMoves.map(posToKey));
-    },
-  };
+export function Knight(
+  board: Pieces.PieceSymbol[][],
+  pos: IPosition
+): Set<string> {
+  const { player } = Pieces.getPiece(board[pos.r][pos.c]);
+  const helpers = createPieceHelpers(board, player);
+  const possibleMoves = createPotentialMoves(
+    [
+      { r: pos.r - 2, c: pos.c + 1 },
+      { r: pos.r - 1, c: pos.c + 2 },
+      { r: pos.r + 1, c: pos.c + 2 },
+      { r: pos.r + 2, c: pos.c + 1 },
+      { r: pos.r + 2, c: pos.c - 1 },
+      { r: pos.r + 1, c: pos.c - 2 },
+      { r: pos.r - 1, c: pos.c - 2 },
+      { r: pos.r - 2, c: pos.c - 1 },
+    ],
+    board.length
+  ).filter((p) => !helpers.isFriendlyPiece(p));
+  return new Set(possibleMoves.map(posToKey));
 }
