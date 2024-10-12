@@ -12,7 +12,12 @@ export const Pawn: Pieces.PieceFunction = (
 
   const helpers = createPieceHelpers(board, player);
   const boardSize = board.length;
-  const generatePositions = helpers.createPositionsGenerator(pos, 2, boardSize);
+  const generatePositions = helpers.createPositionsGenerator(
+    pos,
+    2,
+    boardSize,
+    filter === "capture"
+  );
   const pawnDirection = player === "w" ? 1 : -1;
   const pawnStartingRow = player === "w" ? 1 : board.length - 2;
 

@@ -13,7 +13,12 @@ export const Rook: Pieces.PieceFunction = (
 
   const boardSize = board.length;
 
-  const generatePositions = helpers.createPositionsGenerator(pos, 8, boardSize);
+  const generatePositions = helpers.createPositionsGenerator(
+    pos,
+    8,
+    boardSize,
+    filter === "capture"
+  );
 
   const possibleMoves = createPotentialMoves(
     board,

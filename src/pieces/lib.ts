@@ -16,14 +16,15 @@ export function createPieceHelpers(board: Board, player: Color) {
   };
 
   const createPositionsGenerator =
-    (position: IPosition, steps: number, boardSize: number) =>
     (
-      rowDirection: number,
-      columnDirection: number,
+      position: IPosition,
+      steps: number,
+      boardSize: number,
       // if this flag is set to true, the generator will include the first position that is occupied by a friendly piece
       // in the list of returned positions. this is useful for collecting valid capture positions vs valid move positions.
       includeFriendlyPieces?: boolean
-    ) => {
+    ) =>
+    (rowDirection: number, columnDirection: number) => {
       let shouldBreak = false;
 
       return stepPositions(

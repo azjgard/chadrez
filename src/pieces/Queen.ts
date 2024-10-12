@@ -14,7 +14,8 @@ export const Queen: Pieces.PieceFunction = (
   const generatePositions = helpers.createPositionsGenerator(
     pos,
     8,
-    board.length
+    board.length,
+    filter === "capture"
   );
 
   const possibleMoves = createPotentialMoves(

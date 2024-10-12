@@ -16,7 +16,8 @@ export const Bishop: Pieces.PieceFunction = (
   const generatePositions = helpers.createPositionsGenerator(
     pos,
     boardSize,
-    boardSize
+    boardSize,
+    filter === "capture"
   );
 
   const possibleMoves = createPotentialMoves(
