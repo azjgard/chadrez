@@ -1,9 +1,9 @@
-import { Board, IGameState, IPosition, posToKey } from "./lib";
+import { Board, BoardMethods, IGameState, IPosition, posToKey } from "./lib";
 import * as Pieces from "./pieces";
 
 // need to assume that white is always on top, black is always on bottom
 // can rotate the view if needed but this simplifies the move logic significantly
-export const DEFAULT_BOARD: Board = [
+export const DEFAULT_BOARD = createBoard([
   ["R", "N", "B", " ", "Q", "B", "N", "R"],
   ["P", "P", "P", "P", "P", "P", "P", "P"],
   [" ", " ", " ", " ", " ", " ", " ", " "],
@@ -12,14 +12,40 @@ export const DEFAULT_BOARD: Board = [
   [" ", " ", " ", " ", " ", " ", " ", " "],
   ["p", "p", "p", "p", "p", "p", "p", "p"],
   ["r", "n", "b", "k", "q", "b", "n", "r"],
-];
+]);
 
-export function getInitialGameState(board: Board = DEFAULT_BOARD) {
+export function createBoard(board: Pieces.PieceSymbol[][]): Board {
+  const arr = JSON.parse(JSON.stringify(board));
+
+  const methods: BoardMethods = {
+    // TODO: refactor this so that it uses properties cached on the board instead of always having
+    // to re-compute
+    getKingPosition: (player) => {
+      for (let r = 0; r < arr.length; r++) {
+        for (let c = 0; c < arr[r].length; c++) {
+          const piece = Pieces.maybeGetPiece(arr[r][c]);
+          if (piece?.name === "king" && piece.player === player) {
+            return { r, c };
+          }
+        }
+      }
+      throw new Error("Couldn't get king position");
+    },
+  };
+
+  Object.assign(arr, methods);
+
+  return arr as Board;
+}
+
+export function getInitialGameState(
+  board: Pieces.PieceSymbol[][] = DEFAULT_BOARD
+) {
   let gameState: IGameState = {
     player: "w",
     selectedSquare: null,
     validMovesFromPosition: new Map(),
-    board,
+    board: createBoard(board),
     capturedPieces: { w: [], b: [] },
   };
 
@@ -32,7 +58,7 @@ export function applyMoveTurnToGameState(
   gameState: IGameState,
   moveTo: IPosition | null // passed as null when computing initial gameState
 ): IGameState {
-  const newBoard = [...gameState.board];
+  const newBoard = createBoard(gameState.board);
   const newPlayer = moveTo ? (gameState.player === "w" ? "b" : "w") : "w";
   const newCapturedPieces = { ...gameState.capturedPieces };
 

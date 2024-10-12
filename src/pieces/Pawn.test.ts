@@ -1,14 +1,16 @@
-import { getInitialGameState } from "../gameState";
+import { createBoard, getInitialGameState } from "../gameState";
 import { posToKey } from "../lib";
 
 test("Pawns can move one or two spaces off their starting square", () => {
-  const state = getInitialGameState([
-    [" ", " ", "K"],
-    [" ", "P", " "],
-    [" ", " ", " "],
-    [" ", " ", " "],
-    [" ", "k", " "],
-  ]);
+  const state = getInitialGameState(
+    createBoard([
+      [" ", " ", "K"],
+      [" ", "P", " "],
+      [" ", " ", " "],
+      [" ", " ", " "],
+      [" ", "k", " "],
+    ])
+  );
 
   const validPawnMoves = state.validMovesFromPosition.get(
     posToKey({ r: 1, c: 1 })

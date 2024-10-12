@@ -14,15 +14,12 @@ export function Bishop(board: Board, pos: IPosition): Set<string> {
     boardSize
   );
 
-  const possibleMoves = createPotentialMoves(
-    [
-      ...generatePositions(-1, 1),
-      ...generatePositions(1, 1),
-      ...generatePositions(1, -1),
-      ...generatePositions(-1, -1),
-    ],
-    boardSize
-  );
+  const possibleMoves = createPotentialMoves(board, pos, [
+    ...generatePositions(-1, 1),
+    ...generatePositions(1, 1),
+    ...generatePositions(1, -1),
+    ...generatePositions(-1, -1),
+  ]);
 
   return new Set(possibleMoves.map(posToKey));
 }

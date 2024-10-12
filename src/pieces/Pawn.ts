@@ -12,10 +12,9 @@ export function Pawn(board: Board, pos: IPosition): Set<string> {
   const pawnStartingRow = player === "w" ? 1 : board.length - 2;
 
   const forward = createPotentialMoves(
-    // pawn-specific behavior:
-    // locked move direction according to color
-    generatePositions(pawnDirection, 0),
-    boardSize
+    board,
+    pos,
+    generatePositions(pawnDirection, 0)
   ).filter((p, i) => {
     if (helpers.isPiece(p)) return false;
     // pawn-specific behavior:
@@ -26,13 +25,10 @@ export function Pawn(board: Board, pos: IPosition): Set<string> {
     return true;
   });
 
-  const diagonal = createPotentialMoves(
-    [
-      { r: pos.r + pawnDirection, c: pos.c + 1 },
-      { r: pos.r + pawnDirection, c: pos.c - 1 },
-    ],
-    boardSize
-  ).filter((p) => {
+  const diagonal = createPotentialMoves(board, pos, [
+    { r: pos.r + pawnDirection, c: pos.c + 1 },
+    { r: pos.r + pawnDirection, c: pos.c - 1 },
+  ]).filter((p) => {
     const maybePiece = Pieces.maybeGetPiece(board[p.r][p.c]);
 
     // can only move diagonal if there's an enemy piece in the diagonal square

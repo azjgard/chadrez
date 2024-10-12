@@ -29,7 +29,7 @@ export function keyToPos(pos: string) {
 }
 
 export function posOnBoard(p: IPosition, boardSize: number) {
-  return p.r >= 0 && p.r <= boardSize - 1;
+  return p.r >= 0 && p.r <= boardSize - 1 && p.c >= 0 && p.c <= boardSize - 1;
 }
 
 export interface IGameState {
@@ -43,7 +43,11 @@ export interface IGameState {
   };
 }
 
-export type Board = Pieces.PieceSymbol[][];
+export interface BoardMethods {
+  getKingPosition(player: Color): IPosition;
+}
+
+export type Board = Pieces.PieceSymbol[][] & BoardMethods;
 
 export interface IPosition {
   r: number;

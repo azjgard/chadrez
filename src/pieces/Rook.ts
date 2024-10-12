@@ -10,15 +10,12 @@ export function Rook(board: Board, pos: IPosition): Set<string> {
 
   const generatePositions = helpers.createPositionsGenerator(pos, 8, boardSize);
 
-  const possibleMoves = createPotentialMoves(
-    [
-      ...generatePositions(-1, 0),
-      ...generatePositions(0, 1),
-      ...generatePositions(1, 0),
-      ...generatePositions(0, -1),
-    ],
-    boardSize
-  );
+  const possibleMoves = createPotentialMoves(board, pos, [
+    ...generatePositions(-1, 0),
+    ...generatePositions(0, 1),
+    ...generatePositions(1, 0),
+    ...generatePositions(0, -1),
+  ]);
 
   return new Set(possibleMoves.map(posToKey));
 }
