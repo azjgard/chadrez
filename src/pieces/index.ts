@@ -28,7 +28,7 @@ export type PieceSymbol = keyof typeof SYMBOL_TO_PIECE;
 export type PieceFunction = (
   board: Board,
   pos: IPosition,
-  positionsTargetingPos?: IPosition[] | undefined
+  positionsTargetingPos?: Record<string, IPosition[]> | undefined
 ) => Set<string>;
 
 export function isValidSymbol(symbol: string): symbol is PieceSymbol {

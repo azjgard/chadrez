@@ -142,7 +142,7 @@ export function applyMoveTurnToGameState(
     const validMoves = maybePiece.piece(
       newGameState.board,
       p,
-      positionsTargetingPos[key]
+      positionsTargetingPos
     );
 
     newGameState.validMovesFromPosition.set(key, validMoves);

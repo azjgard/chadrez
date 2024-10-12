@@ -5,7 +5,7 @@ import { createPieceHelpers, createPotentialMoves } from "./lib";
 export function Knight(
   board: Board,
   pos: IPosition,
-  positionsTargetingPos?: IPosition[]
+  positionsTargetingPos?: Record<string, IPosition[]>
 ): Set<string> {
   const { player } = Pieces.getPiece(board[pos.r][pos.c]);
   const helpers = createPieceHelpers(board, player);

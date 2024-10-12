@@ -1,5 +1,5 @@
 import { createBoard } from "../gameState";
-import { IPosition } from "../lib";
+import { IPosition, posToKey } from "../lib";
 import { createPotentialMoves } from "./lib";
 
 describe("createPotentialMoves", () => {
@@ -12,10 +12,11 @@ describe("createPotentialMoves", () => {
 
     const pos = { r: 0, c: 1 };
     const potentialMoves: IPosition[] = [{ r: 1, c: 1 }];
-    const piecesTargetingPos: IPosition[] = [];
 
     expect(
-      createPotentialMoves(board, pos, potentialMoves, piecesTargetingPos)
+      createPotentialMoves(board, pos, potentialMoves, {
+        [posToKey(pos)]: [],
+      })
     ).toEqual([{ r: 1, c: 1 }]);
   });
 
@@ -33,10 +34,11 @@ describe("createPotentialMoves", () => {
       { r: 10, c: 0 },
       { r: 1, c: 10 },
     ];
-    const piecesTargetingPos: IPosition[] = [{ r: 0, c: 0 }];
 
     expect(
-      createPotentialMoves(board, pos, potentialMoves, piecesTargetingPos)
+      createPotentialMoves(board, pos, potentialMoves, {
+        [posToKey(pos)]: [{ r: 0, c: 0 }],
+      })
     ).toEqual([]);
   });
 
@@ -49,10 +51,12 @@ describe("createPotentialMoves", () => {
 
     const pos = { r: 0, c: 1 };
     const potentialMoves: IPosition[] = [{ r: 1, c: 1 }];
-    const piecesTargetingPos: IPosition[] = [{ r: 0, c: 0 }];
+    const positionsTargetingPos = {
+      [posToKey(pos)]: [{ r: 0, c: 0 }],
+    };
 
     expect(
-      createPotentialMoves(board, pos, potentialMoves, piecesTargetingPos)
+      createPotentialMoves(board, pos, potentialMoves, positionsTargetingPos)
     ).toEqual([]);
   });
 });

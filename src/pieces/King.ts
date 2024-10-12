@@ -1,18 +1,16 @@
 import * as Pieces from ".";
 import { Board, IPosition, posToKey } from "../lib";
-import { createPieceHelpers, createPotentialMoves } from "./lib";
+import { createPieceHelpers, createPotentialKingMoves } from "./lib";
 
 export function King(
   board: Board,
   pos: IPosition,
-  positionsTargetingPos?: IPosition[]
+  positionsTargetingPos?: Record<string, IPosition[]>
 ): Set<string> {
   const { player } = Pieces.getPiece(board[pos.r][pos.c]);
   const helpers = createPieceHelpers(board, player);
 
-  // TODO: disallow the king from moving into check, will require changing valid move
-  // computation to always do both sides at once
-  const possibleMoves = createPotentialMoves(
+  const possibleMoves = createPotentialKingMoves(
     board,
     pos,
     [
