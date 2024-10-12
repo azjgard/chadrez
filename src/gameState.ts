@@ -18,7 +18,7 @@ export function createBoard(board: Pieces.PieceSymbol[][]): Board {
   const arr = JSON.parse(JSON.stringify(board));
 
   const methods: BoardMethods = {
-    // TODO: refactor this so that it uses properties cached on the board instead of always having
+    // TODO: use properties cached on the board object instead of always having
     // to re-compute
     getKingPosition: (player) => {
       for (let r = 0; r < arr.length; r++) {
@@ -29,7 +29,10 @@ export function createBoard(board: Pieces.PieceSymbol[][]): Board {
           }
         }
       }
-      throw new Error("Couldn't get king position");
+
+      // since we compute hypothetical moves, it's possible that the king is not on the board
+      // for a given move
+      return null;
     },
   };
 

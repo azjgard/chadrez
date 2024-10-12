@@ -74,7 +74,10 @@ export function createPotentialMoves(
 ) {
   const symbol = board[pos.r][pos.c];
   const { player } = Pieces.getPiece(symbol);
-  const kingPosKey = posToKey(board.getKingPosition(player));
+
+  const kingPos = board.getKingPosition(player);
+  if (!kingPos) return []; // we've been asked to create potential moves for an invalid board
+  const kingPosKey = posToKey(kingPos);
 
   return (
     potentialMoves

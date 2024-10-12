@@ -44,7 +44,7 @@ export interface IGameState {
 }
 
 export interface BoardMethods {
-  getKingPosition(player: Color): IPosition;
+  getKingPosition(player: Color): IPosition | null;
 }
 
 export type Board = Pieces.PieceSymbol[][] & BoardMethods;

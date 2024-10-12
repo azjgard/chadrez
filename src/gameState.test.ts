@@ -11,9 +11,11 @@ test("Pieces can be moved", () => {
 
   state = applyMoveTurnToGameState(state, { r: 1, c: 1 });
 
-  expect(state.board).toEqual([
-    [" ", " ", "K"],
-    [" ", "P", " "],
-    [" ", "k", " "],
-  ]);
+  expect(JSON.stringify(state.board)).toEqual(
+    JSON.stringify([
+      [" ", " ", "K"],
+      [" ", "P", " "],
+      [" ", "k", " "],
+    ])
+  );
 });
