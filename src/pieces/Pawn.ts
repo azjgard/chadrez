@@ -2,7 +2,11 @@ import * as Pieces from ".";
 import { Board, IPosition, posToKey } from "../lib";
 import { createPieceHelpers, createPotentialMoves } from "./lib";
 
-export function Pawn(board: Board, pos: IPosition): Set<string> {
+export function Pawn(
+  board: Board,
+  pos: IPosition,
+  positionsTargetingPos?: IPosition[]
+): Set<string> {
   const { player } = Pieces.getPiece(board[pos.r][pos.c]);
 
   const helpers = createPieceHelpers(board, player);
@@ -14,7 +18,8 @@ export function Pawn(board: Board, pos: IPosition): Set<string> {
   const forward = createPotentialMoves(
     board,
     pos,
-    generatePositions(pawnDirection, 0)
+    generatePositions(pawnDirection, 0),
+    positionsTargetingPos
   ).filter((p, i) => {
     if (helpers.isPiece(p)) return false;
     // pawn-specific behavior:
@@ -25,10 +30,15 @@ export function Pawn(board: Board, pos: IPosition): Set<string> {
     return true;
   });
 
-  const diagonal = createPotentialMoves(board, pos, [
-    { r: pos.r + pawnDirection, c: pos.c + 1 },
-    { r: pos.r + pawnDirection, c: pos.c - 1 },
-  ]).filter((p) => {
+  const diagonal = createPotentialMoves(
+    board,
+    pos,
+    [
+      { r: pos.r + pawnDirection, c: pos.c + 1 },
+      { r: pos.r + pawnDirection, c: pos.c - 1 },
+    ],
+    positionsTargetingPos
+  ).filter((p) => {
     const maybePiece = Pieces.maybeGetPiece(board[p.r][p.c]);
 
     // can only move diagonal if there's an enemy piece in the diagonal square

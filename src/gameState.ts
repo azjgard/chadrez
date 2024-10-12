@@ -111,18 +111,39 @@ export function applyMoveTurnToGameState(
     capturedPieces: newCapturedPieces,
   };
 
-  for (let r = 0; r < newGameState.board.length; r++) {
-    for (let c = 0; c < newGameState.board[r].length; c++) {
-      const maybePieceInfo = Pieces.maybeGetPiece(newGameState.board[r][c]);
-      if (!maybePieceInfo) continue;
-
-      const key = posToKey({ r, c });
-      newGameState.validMovesFromPosition.set(
-        key,
-        maybePieceInfo.piece(newGameState.board, { r, c })
-      );
+  const forEachSquare = (cb: (pos: IPosition) => void) => {
+    for (let r = 0; r < newGameState.board.length; r++) {
+      for (let c = 0; c < newGameState.board[r].length; c++) {
+        cb({ r, c });
+      }
     }
-  }
+  };
+
+  const positionsTargetingPos: Record<string, IPosition[]> = {};
+  forEachSquare((p) => {
+    const maybePiece = Pieces.maybeGetPiece(newGameState.board[p.r][p.c]);
+    if (!maybePiece) return;
+
+    const validMoves = maybePiece.piece(newGameState.board, p);
+    validMoves.forEach((pos) => {
+      positionsTargetingPos[pos] ??= [];
+      positionsTargetingPos[pos].push(p);
+    });
+  });
+
+  forEachSquare((p) => {
+    const maybePiece = Pieces.maybeGetPiece(newGameState.board[p.r][p.c]);
+    if (!maybePiece) return;
+
+    const key = posToKey(p);
+    const validMoves = maybePiece.piece(
+      newGameState.board,
+      p,
+      positionsTargetingPos[key]
+    );
+
+    newGameState.validMovesFromPosition.set(key, validMoves);
+  });
 
   return newGameState;
 }

@@ -70,7 +70,7 @@ export function createPotentialMoves(
   board: Board,
   pos: IPosition,
   potentialMoves: IPosition[],
-  piecesTargetingPos: IPosition[] = []
+  piecePositionsTargetingPos: IPosition[] = []
 ) {
   const symbol = board[pos.r][pos.c];
   const { player } = Pieces.getPiece(symbol);
@@ -88,7 +88,7 @@ export function createPotentialMoves(
         b[pos.r][pos.c] = " ";
 
         // for each piece targeting the current position of our piece
-        for (const p of piecesTargetingPos) {
+        for (const p of piecePositionsTargetingPos) {
           const symbol = board[p.r][p.c];
           const pieceInfo = Pieces.getPiece(symbol);
 

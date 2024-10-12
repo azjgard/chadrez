@@ -2,7 +2,11 @@ import * as Pieces from ".";
 import { Board, IPosition, posToKey } from "../lib";
 import { createPieceHelpers, createPotentialMoves } from "./lib";
 
-export function Rook(board: Board, pos: IPosition): Set<string> {
+export function Rook(
+  board: Board,
+  pos: IPosition,
+  positionsTargetingPos?: IPosition[]
+): Set<string> {
   const { player } = Pieces.getPiece(board[pos.r][pos.c]);
   const helpers = createPieceHelpers(board, player);
 
@@ -10,12 +14,17 @@ export function Rook(board: Board, pos: IPosition): Set<string> {
 
   const generatePositions = helpers.createPositionsGenerator(pos, 8, boardSize);
 
-  const possibleMoves = createPotentialMoves(board, pos, [
-    ...generatePositions(-1, 0),
-    ...generatePositions(0, 1),
-    ...generatePositions(1, 0),
-    ...generatePositions(0, -1),
-  ]);
+  const possibleMoves = createPotentialMoves(
+    board,
+    pos,
+    [
+      ...generatePositions(-1, 0),
+      ...generatePositions(0, 1),
+      ...generatePositions(1, 0),
+      ...generatePositions(0, -1),
+    ],
+    positionsTargetingPos
+  );
 
   return new Set(possibleMoves.map(posToKey));
 }
