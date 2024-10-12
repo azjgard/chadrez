@@ -143,11 +143,6 @@ export function createPotentialKingMoves(
       // filter out positions that are occupied by friendly pieces
       .filter((potentialPos) => {
         const potentialPosKey = posToKey(potentialPos);
-        // TODO:
-        // there's going to be a bug where the king is going to be allowed to take pieces and move into check by doing
-        // so because for all pieces we're going to filter out moves that would move them into their own friendly piece
-        // squares, which in so doing means that we're not going to have those squares as potential move targets. need
-        // to tweak initial pass to not filter out friendly pieces from potential move targets.
 
         // return false if any enemy pieces targeting this potential new position for the king
         for (const p of positionsTargetingPos[potentialPosKey] ?? []) {

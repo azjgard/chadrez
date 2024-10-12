@@ -101,9 +101,6 @@ export function applyMoveTurnToGameState(
     // - converting a pawn
 
     // TODO: compute whether or not king is now in check or checkmate
-    //
-
-    // TODO: each piece needs to filter moves by whether or not a given move puts their own king in check
   }
 
   const newGameState: IGameState = {
