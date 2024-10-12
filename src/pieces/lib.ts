@@ -17,8 +17,14 @@ export function createPieceHelpers(board: Board, player: Color) {
 
   const createPositionsGenerator =
     (position: IPosition, steps: number, boardSize: number) =>
-    (rowDirection: number, columnDirection: number) => {
-      let hasSeenEnemyPiece = false;
+    (
+      rowDirection: number,
+      columnDirection: number,
+      // if this flag is set to true, the generator will include the first position that is occupied by a friendly piece
+      // in the list of returned positions. this is useful for collecting valid capture positions vs valid move positions.
+      includeFriendlyPieces?: boolean
+    ) => {
+      let shouldBreak = false;
 
       return stepPositions(
         position,
@@ -26,16 +32,25 @@ export function createPieceHelpers(board: Board, player: Color) {
         columnDirection,
         steps,
         (position) => {
-          if (hasSeenEnemyPiece || !posOnBoard(position, boardSize)) {
+          if (shouldBreak || !posOnBoard(position, boardSize)) {
             return false;
           }
 
           if (isEnemyPiece(position)) {
-            hasSeenEnemyPiece = true;
+            shouldBreak = true;
             return true;
           }
 
-          return !isFriendlyPiece(position);
+          if (isFriendlyPiece(position)) {
+            if (includeFriendlyPieces) {
+              shouldBreak = true;
+              return true;
+            } else {
+              return false;
+            }
+          }
+
+          return true;
         }
       );
     };
@@ -70,6 +85,7 @@ export function createPotentialMoves(
   board: Board,
   pos: IPosition,
   potentialMoves: IPosition[],
+  filter: "move" | "capture",
   positionsTargetingPos: Record<string, IPosition[]> = {}
 ) {
   const symbol = board[pos.r][pos.c];
@@ -99,7 +115,7 @@ export function createPotentialMoves(
           if (pieceInfo.player === player) continue;
 
           // compute potential moves for the targeting piece on a board where our piece has moved
-          const piecePotentialMoves = pieceInfo.piece(b, p);
+          const piecePotentialMoves = pieceInfo.piece(b, p, filter);
           if (piecePotentialMoves.has(kingPosKey)) {
             return false;
           }

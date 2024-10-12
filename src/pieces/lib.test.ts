@@ -14,7 +14,7 @@ describe("createPotentialMoves", () => {
     const potentialMoves: IPosition[] = [{ r: 1, c: 1 }];
 
     expect(
-      createPotentialMoves(board, pos, potentialMoves, {
+      createPotentialMoves(board, pos, potentialMoves, "move", {
         [posToKey(pos)]: [],
       })
     ).toEqual([{ r: 1, c: 1 }]);
@@ -36,7 +36,7 @@ describe("createPotentialMoves", () => {
     ];
 
     expect(
-      createPotentialMoves(board, pos, potentialMoves, {
+      createPotentialMoves(board, pos, potentialMoves, "move", {
         [posToKey(pos)]: [{ r: 0, c: 0 }],
       })
     ).toEqual([]);
@@ -56,7 +56,13 @@ describe("createPotentialMoves", () => {
     };
 
     expect(
-      createPotentialMoves(board, pos, potentialMoves, positionsTargetingPos)
+      createPotentialMoves(
+        board,
+        pos,
+        potentialMoves,
+        "move",
+        positionsTargetingPos
+      )
     ).toEqual([]);
   });
 });

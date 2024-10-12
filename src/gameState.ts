@@ -127,7 +127,7 @@ export function applyMoveTurnToGameState(
     const maybePiece = Pieces.maybeGetPiece(newGameState.board[p.r][p.c]);
     if (!maybePiece) return;
 
-    const validMoves = maybePiece.piece(newGameState.board, p);
+    const validMoves = maybePiece.piece(newGameState.board, p, "capture");
     validMoves.forEach((pos) => {
       positionsTargetingPos[pos] ??= [];
       positionsTargetingPos[pos].push(p);
@@ -139,9 +139,11 @@ export function applyMoveTurnToGameState(
     if (!maybePiece) return;
 
     const key = posToKey(p);
+
     const validMoves = maybePiece.piece(
       newGameState.board,
       p,
+      "move",
       positionsTargetingPos
     );
 

@@ -28,6 +28,9 @@ export type PieceSymbol = keyof typeof SYMBOL_TO_PIECE;
 export type PieceFunction = (
   board: Board,
   pos: IPosition,
+  // "move": where can this piece move to?
+  // "capture": which squares could this piece capture on if an enemy piece occuped them?
+  filter: "move" | "capture",
   positionsTargetingPos?: Record<string, IPosition[]> | undefined
 ) => Set<string>;
 

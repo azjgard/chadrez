@@ -1,15 +1,17 @@
 import * as Pieces from ".";
-import { Board, IPosition, posToKey } from "../lib";
+import { posToKey } from "../lib";
 import { createPieceHelpers, createPotentialMoves } from "./lib";
 
-export function Knight(
-  board: Board,
-  pos: IPosition,
-  positionsTargetingPos?: Record<string, IPosition[]>
-): Set<string> {
+export const Knight: Pieces.PieceFunction = (
+  board,
+  pos,
+  filter,
+  positionsTargetingPos?
+) => {
   const { player } = Pieces.getPiece(board[pos.r][pos.c]);
   const helpers = createPieceHelpers(board, player);
-  const possibleMoves = createPotentialMoves(
+
+  let possibleMoves = createPotentialMoves(
     board,
     pos,
     [
@@ -22,7 +24,13 @@ export function Knight(
       { r: pos.r - 1, c: pos.c - 2 },
       { r: pos.r - 2, c: pos.c - 1 },
     ],
+    filter,
     positionsTargetingPos
-  ).filter((p) => !helpers.isFriendlyPiece(p));
+  );
+
+  if (filter === "move") {
+    possibleMoves = possibleMoves.filter((p) => !helpers.isFriendlyPiece(p));
+  }
+
   return new Set(possibleMoves.map(posToKey));
-}
+};

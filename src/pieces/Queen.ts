@@ -1,12 +1,13 @@
 import * as Pieces from ".";
-import { Board, IPosition, posToKey } from "../lib";
+import { posToKey } from "../lib";
 import { createPieceHelpers, createPotentialMoves } from "./lib";
 
-export function Queen(
-  board: Board,
-  pos: IPosition,
-  positionsTargetingPos?: Record<string, IPosition[]>
-): Set<string> {
+export const Queen: Pieces.PieceFunction = (
+  board,
+  pos,
+  filter,
+  positionsTargetingPos
+) => {
   const { player } = Pieces.getPiece(board[pos.r][pos.c]);
   const helpers = createPieceHelpers(board, player);
 
@@ -31,8 +32,9 @@ export function Queen(
       ...generatePositions(1, -1),
       ...generatePositions(-1, -1),
     ],
+    filter,
     positionsTargetingPos
   );
 
   return new Set(possibleMoves.map(posToKey));
-}
+};
