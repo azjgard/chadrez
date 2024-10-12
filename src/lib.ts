@@ -37,6 +37,7 @@ export interface IGameState {
   board: Board;
   selectedSquare: IPosition | null;
   validMovesFromPosition: Map<string, Set<string>>;
+  condition: "check" | "checkmate" | "stalemate" | null;
   capturedPieces: {
     w: Pieces.PieceSymbol[];
     b: Pieces.PieceSymbol[];

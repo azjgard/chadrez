@@ -7,8 +7,10 @@ import { applyMoveTurnToGameState, getInitialGameState } from "./gameState";
 import "./App.css";
 import { defaultPieceImageMap } from "./assets/pieceImages";
 
+const initialState = getInitialGameState();
+
 function App() {
-  const [gameState, setGameState] = useState(getInitialGameState());
+  const [gameState, setGameState] = useState(initialState);
   const [copyText, setCopyText] = useState("Copy board to clipboard");
 
   const selectedPieceKey = useMemo(

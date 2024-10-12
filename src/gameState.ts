@@ -1,4 +1,11 @@
-import { Board, BoardMethods, IGameState, IPosition, posToKey } from "./lib";
+import {
+  Board,
+  BoardMethods,
+  IGameState,
+  IPosition,
+  keyToPos,
+  posToKey,
+} from "./lib";
 import * as Pieces from "./pieces";
 
 // need to assume that white is always on top, black is always on bottom
@@ -50,6 +57,7 @@ export function getInitialGameState(
     validMovesFromPosition: new Map(),
     board: createBoard(board),
     capturedPieces: { w: [], b: [] },
+    condition: null,
   };
 
   gameState = applyMoveTurnToGameState(gameState, null);
@@ -99,8 +107,6 @@ export function applyMoveTurnToGameState(
     // - en passant
     // - castling
     // - converting a pawn
-
-    // TODO: compute whether or not king is now in check or checkmate
   }
 
   const newGameState: IGameState = {
@@ -109,12 +115,14 @@ export function applyMoveTurnToGameState(
     selectedSquare: null,
     player: newPlayer,
     capturedPieces: newCapturedPieces,
+    condition: null,
   };
 
-  const forEachSquare = (cb: (pos: IPosition) => void) => {
+  const forEachSquare = (cb: (pos: IPosition) => void | boolean) => {
     for (let r = 0; r < newGameState.board.length; r++) {
       for (let c = 0; c < newGameState.board[r].length; c++) {
-        cb({ r, c });
+        const shouldBreak = cb({ r, c });
+        if (shouldBreak) return;
       }
     }
   };
@@ -146,6 +154,58 @@ export function applyMoveTurnToGameState(
 
     newGameState.validMovesFromPosition.set(key, validMoves);
   });
+
+  let friendlyKingPos: IPosition | null = null;
+
+  forEachSquare((p) => {
+    const maybePiece = Pieces.maybeGetPiece(newGameState.board[p.r][p.c]);
+    if (!maybePiece) return;
+
+    if (maybePiece.name === "king" && maybePiece.player === newPlayer) {
+      friendlyKingPos = p;
+      return true;
+    }
+  });
+
+  if (!friendlyKingPos) {
+    throw new Error("Could not find friendly king");
+  }
+
+  const hasValidMoves = Array.from(
+    newGameState.validMovesFromPosition.entries()
+  )
+    .filter(([_pos]) => {
+      const pos = keyToPos(_pos);
+      const symbol = newGameState.board[pos.r][pos.c];
+      const { player } = Pieces.getPiece(symbol);
+      return player === newPlayer;
+    })
+    .some(([, set]) => set.size > 0);
+
+  const inCheck =
+    (positionsTargetingPos[posToKey(friendlyKingPos)] || []).filter((pos) => {
+      const symbol = newGameState.board[pos.r][pos.c];
+      const { player } = Pieces.getPiece(symbol);
+      return player !== newPlayer;
+    })?.length > 0;
+
+  // I initially thought this would be the case only if the KING didn't
+  // have valid moves, but since we're computing the valid moves for all pieces
+  // relative to whether or not a given move would end with the friendly king
+  // in check, a checkmate scenario is actually one where no piece has any valid
+  // moves because all board configurations with possible moves result in the
+  // king being targeted by an enemy piece.
+  const inCheckmate = inCheck && !hasValidMoves;
+
+  const inStalemate = !inCheck && !hasValidMoves;
+
+  if (inCheckmate) {
+    newGameState.condition = "checkmate";
+  } else if (inStalemate) {
+    newGameState.condition = "stalemate";
+  } else if (inCheck) {
+    newGameState.condition = "check";
+  }
 
   return newGameState;
 }
