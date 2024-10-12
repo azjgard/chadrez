@@ -1,11 +1,8 @@
 import * as Pieces from ".";
-import { IPosition, posToKey } from "../lib";
+import { Board, IPosition, posToKey } from "../lib";
 import { createPieceHelpers, createPotentialMoves } from "./lib";
 
-export function Knight(
-  board: Pieces.PieceSymbol[][],
-  pos: IPosition
-): Set<string> {
+export function Knight(board: Board, pos: IPosition): Set<string> {
   const { player } = Pieces.getPiece(board[pos.r][pos.c]);
   const helpers = createPieceHelpers(board, player);
   const possibleMoves = createPotentialMoves(

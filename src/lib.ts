@@ -32,11 +32,9 @@ export function posOnBoard(p: IPosition, boardSize: number) {
   return p.r >= 0 && p.r <= boardSize - 1;
 }
 
-export type Board = IPieceOnBoard[][];
-
 export interface IGameState {
   player: Color;
-  board: Pieces.PieceSymbol[][];
+  board: Board;
   selectedSquare: IPosition | null;
   validMovesFromPosition: Map<string, Set<string>>;
   capturedPieces: {
@@ -44,6 +42,8 @@ export interface IGameState {
     b: Pieces.PieceSymbol[];
   };
 }
+
+export type Board = Pieces.PieceSymbol[][];
 
 export interface IPosition {
   r: number;

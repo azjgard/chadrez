@@ -1,10 +1,7 @@
 import * as Pieces from ".";
-import { Color, IPosition, posOnBoard } from "../lib";
+import { Board, Color, IPosition, posOnBoard } from "../lib";
 
-export function createPieceHelpers(
-  board: Pieces.PieceSymbol[][],
-  player: Color
-) {
+export function createPieceHelpers(board: Board, player: Color) {
   const isPiece = (p: IPosition) => Pieces.isNonEmptySymbol(board[p.r][p.c]);
 
   const isEnemyPiece = (p: IPosition) => {

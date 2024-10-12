@@ -1,4 +1,4 @@
-import { Color, IPosition, Piece } from "../lib";
+import { Board, Color, IPosition, Piece } from "../lib";
 import { Bishop } from "./Bishop";
 import { King } from "./King";
 import { Knight } from "./Knight";
@@ -25,10 +25,7 @@ const SYMBOL_TO_PIECE = {
 } as const;
 
 export type PieceSymbol = keyof typeof SYMBOL_TO_PIECE;
-export type PieceFunction = (
-  board: PieceSymbol[][],
-  pos: IPosition
-) => Set<string>;
+export type PieceFunction = (board: Board, pos: IPosition) => Set<string>;
 
 export function isValidSymbol(symbol: string): symbol is PieceSymbol {
   return symbol in SYMBOL_TO_PIECE;

@@ -1,9 +1,9 @@
-import { IGameState, IPosition, posToKey } from "./lib";
+import { Board, IGameState, IPosition, posToKey } from "./lib";
 import * as Pieces from "./pieces";
 
 // need to assume that white is always on top, black is always on bottom
 // can rotate the view if needed but this simplifies the move logic significantly
-export const DEFAULT_BOARD: Pieces.PieceSymbol[][] = [
+export const DEFAULT_BOARD: Board = [
   ["R", "N", "B", " ", "Q", "B", "N", "R"],
   ["P", "P", "P", "P", "P", "P", "P", "P"],
   [" ", " ", " ", " ", " ", " ", " ", " "],
@@ -14,9 +14,7 @@ export const DEFAULT_BOARD: Pieces.PieceSymbol[][] = [
   ["r", "n", "b", "k", "q", "b", "n", "r"],
 ];
 
-export function getInitialGameState(
-  board: Pieces.PieceSymbol[][] = DEFAULT_BOARD
-) {
+export function getInitialGameState(board: Board = DEFAULT_BOARD) {
   let gameState: IGameState = {
     player: "w",
     selectedSquare: null,
