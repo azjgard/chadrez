@@ -30,8 +30,6 @@ function App() {
     );
   }, [gameState.validMovesFromPosition, selectedPieceKey]);
 
-  const turnText = gameState.player === "w" ? "White to move" : "Black to move";
-
   const onClickSquare = (pos: IPosition) => {
     const maybePiece = Pieces.maybeGetPiece(gameState.board[pos.r][pos.c]);
 
@@ -55,9 +53,11 @@ function App() {
     setGameState(newGameState);
   };
 
+  const text = getText(gameState);
+
   return (
     <div>
-      {turnText}
+      {text}
       <CapturedPieces gameState={gameState} player="b" />
       {gameState.board.map((row, r) => {
         const rowData = row.map((pieceSymbol, c) => {
@@ -99,6 +99,24 @@ function App() {
       </button>
     </div>
   );
+}
+
+function getText(gameState: IGameState) {
+  if (gameState.condition === "stalemate") {
+    return "Stalemate!";
+  }
+
+  if (gameState.condition === "checkmate") {
+    const winner = gameState.player === "w" ? "Black" : "White";
+    return `${winner} wins!`;
+  }
+
+  const player = gameState.player === "w" ? "White" : "Black";
+  if (gameState.condition === "check") {
+    return `${player} is in check!`;
+  }
+
+  return `${player} to move`;
 }
 
 interface ISquareProps

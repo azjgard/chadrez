@@ -11,11 +11,11 @@ import * as Pieces from "./pieces";
 // need to assume that white is always on top, black is always on bottom
 // can rotate the view if needed but this simplifies the move logic significantly
 export const DEFAULT_BOARD = createBoard([
-  ["R", "N", "B", " ", "Q", "B", "N", "R"],
+  ["R", "N", "B", "K", "Q", "B", "N", "R"],
   ["P", "P", "P", "P", "P", "P", "P", "P"],
   [" ", " ", " ", " ", " ", " ", " ", " "],
   [" ", " ", " ", " ", " ", " ", " ", " "],
-  [" ", " ", " ", "K", " ", " ", " ", " "],
+  [" ", " ", " ", " ", " ", " ", " ", " "],
   [" ", " ", " ", " ", " ", " ", " ", " "],
   ["p", "p", "p", "p", "p", "p", "p", "p"],
   ["r", "n", "b", "k", "q", "b", "n", "r"],
@@ -38,7 +38,7 @@ export function createBoard(board: Pieces.PieceSymbol[][]): Board {
       }
 
       // since we compute hypothetical moves, it's possible that the king is not on the board
-      // for a given move
+      // for a given hypothetical board configuration
       return null;
     },
   };

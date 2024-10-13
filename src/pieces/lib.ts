@@ -107,8 +107,14 @@ export function createPotentialMoves(
         b[potentialPos.r][potentialPos.c] = symbol;
         b[pos.r][pos.c] = " ";
 
-        // for each piece targeting the current position of our piece
-        for (const p of positionsTargetingPos[posToKey(pos)] ?? []) {
+        const piecePositionsToRecalculate = [
+          // each piece targeting the current position of our piece
+          ...(positionsTargetingPos[posToKey(pos)] ?? []),
+          // each piece targeting the king
+          ...(positionsTargetingPos[kingPosKey] ?? []),
+        ];
+
+        for (const p of piecePositionsToRecalculate) {
           const symbol = board[p.r][p.c];
 
           // if the targeting piece is on our team, continue

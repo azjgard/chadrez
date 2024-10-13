@@ -32,6 +32,25 @@ test("regression: King can move side to side", () => {
   expect(validMoves.has(posToKey({ r: 0, c: 2 }))).toBe(true);
 });
 
+test("regression: irrelevant pieces cannot move while king is in check", () => {
+  const state = getInitialGameState([
+    ["R", "N", "B", "K", " ", "B", "N", "R"],
+    ["P", "P", "P", " ", " ", "P", "P", "P"],
+    [" ", " ", " ", " ", " ", " ", " ", " "],
+    [" ", " ", " ", " ", " ", " ", " ", " "],
+    [" ", " ", " ", "Q", " ", " ", " ", " "],
+    [" ", " ", " ", " ", " ", "p", " ", " "],
+    ["p", "p", "p", " ", " ", "p", " ", "p"],
+    ["r", "n", "b", "k", " ", "b", " ", "r"],
+  ]);
+  const validMoves = state.validMovesFromPosition.get(
+    posToKey({ r: 0, c: 1 })
+  )!;
+  expect(validMoves.size).toBe(2);
+  expect(validMoves.has(posToKey({ r: 0, c: 0 }))).toBe(true);
+  expect(validMoves.has(posToKey({ r: 0, c: 2 }))).toBe(true);
+});
+
 test("King cannot move self into check", () => {
   const state = getInitialGameState([
     [" ", "K", " "],
