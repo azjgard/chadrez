@@ -1,8 +1,12 @@
+import React from "react";
 import { useState, useMemo } from "react";
 import classNames from "classnames";
-import * as Pieces from "./pieces";
-import { Color, IGameState, IPosition, posToKey } from "./lib";
-import { applyMoveTurnToGameState, getInitialGameState } from "./gameState";
+import * as Pieces from "../../shared/pieces";
+import { Color, IGameState, IPosition, posToKey } from "../../shared/lib";
+import {
+  applyMoveTurnToGameState,
+  getInitialGameState,
+} from "../../shared/gameState";
 
 import "./App.css";
 import { defaultPieceImageMap } from "./assets/pieceImages";
