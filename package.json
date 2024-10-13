@@ -4,11 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview",
-    "test": "jest king --watch"
+    "fe:start": "cd frontend && vite",
+    "fe:build": "cd frontend && tsc && vite build",
+    "fe:lint": "cd frontend && eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "fe:preview": "cd frontend && vite preview",
+    "fe:test": "cd frontend && jest"
   },
   "dependencies": {
     "@types/jest": "^29.5.13",
