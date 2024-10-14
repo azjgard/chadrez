@@ -1,71 +1,11 @@
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
   padding: 2rem;
   text-align: center;
-}
-
-.Square {
-  width: 64px;
-  height: 64px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-}
-.Square.light {
-  background-color: #794839;
-}
-.Square.dark {
-  background-color: #5d3231;
-}
-.Square.withPiece {
-  cursor: pointer;
-}
-.Square.selected {
-  background-color: blue;
-}
-
-.Row {
-  display: flex;
-}
-
-.PieceContainer {
-  width: calc(100% - 18px);
-  height: calc(100% - 18px);
-}
-.PieceContainer img {
-  height: 100%;
-}
-
-.MoveTarget {
-  background-color: transparent;
-  cursor: pointer;
   width: 100%;
-  height: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.MoveTarget > div {
-  border-radius: 100%;
-  width: 50%;
-  height: 50%;
-  background-color: gray;
 }
 
-.CapturedPiecesContainer {
+.App {
+  width: 100%;
   display: flex;
-  align-items: center;
-  gap: .5rem;
-  min-height: 45px;
-}
-.CapturedPiece {
-  display: flex;
-  flex-direction: column;
   justify-content: center;
-  height: 45px;
 }
